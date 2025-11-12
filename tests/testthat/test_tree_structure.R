@@ -2,7 +2,8 @@ test_that("tree creation works",{
   depth_vec <- c(1,2,3,4,5,5,5,5,5,5)
   df <- data.frame(
     id = 1:10,
-    depth = depth_vec
+    depth = depth_vec,
+    name = rep("bla", 10)
   )
   
   expected_upper_bound <- c(9,9,9,9,4,5,6,7,8,9)
@@ -20,6 +21,13 @@ test_that("tree creation works",{
   
   expect_equal(info$max_depth, info_vec$max_depth)
   expect_equal(info$upper_bound, info_vec$upper_bound)
+  
+  tree <- make_test_tree_ctr1(df, "depth", name = "name")
+  info <- inspect_tree(tree)
+  
+  expect_true(info$has_name)
+  expect_equal(info$name, rep("bla", 10))
+  expect_equal(info$upper_bound, expected_upper_bound)
 })
 
 test_that("tree creation with ATC_tree match",{
