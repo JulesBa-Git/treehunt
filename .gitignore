@@ -20,6 +20,9 @@
 
 # RStudio files
 .Rproj.user/
+.Rproj.user
+*.Rproj
+
 
 # produced vignettes
 vignettes/*.html
@@ -47,3 +50,46 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Compiled files
+*.o
+*.so
+*.dll
+
+# R build artifacts
+src/*.o
+src/*.so
+src/*.dll
+/src-i386/
+/src-x64/
+
+# Package build
+*.tar.gz
+*.tgz
+treehunt_*.tar.gz
+
+# macOS
+.DS_Store
+
+# Testing
+tests/testthat/_snaps/
+
+# Documentation build artifacts
+docs/
+/doc/
+/Meta/
+
+# pkgdown site
+docs/
+_pkgsite/
+
+# vignette build artifacts  
+inst/doc
+
+# Temporary files
+*~
+\#*\#
+*.swp
+*.swo
+
+.Rbuildignore
