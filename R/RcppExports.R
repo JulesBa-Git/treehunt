@@ -2,6 +2,41 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @keywords internal
+.test_create_patient_data_int <- function(df, node_column, target_column, tree_ptr) {
+    .Call(`_treehunt_test_create_patient_data_int`, df, node_column, target_column, tree_ptr)
+}
+
+#' @keywords internal
+.test_create_patient_data_double <- function(df, node_column, target_column, tree_ptr) {
+    .Call(`_treehunt_test_create_patient_data_double`, df, node_column, target_column, tree_ptr)
+}
+
+#' @keywords internal
+.test_patient_data_size <- function(data_ptr) {
+    .Call(`_treehunt_test_patient_data_size`, data_ptr)
+}
+
+#' @keywords internal
+.test_patient_data_get_nodes <- function(data_ptr, patient_idx) {
+    .Call(`_treehunt_test_patient_data_get_nodes`, data_ptr, patient_idx)
+}
+
+#' @keywords internal
+.test_patient_data_get_target <- function(data_ptr, patient_idx) {
+    .Call(`_treehunt_test_patient_data_get_target`, data_ptr, patient_idx)
+}
+
+#' @keywords internal
+.test_patient_data_get_target_double <- function(data_ptr, patient_idx) {
+    .Call(`_treehunt_test_patient_data_get_target_double`, data_ptr, patient_idx)
+}
+
+#' @keywords internal
+.test_patient_data_has_combination <- function(data_ptr, patient_idx, combination) {
+    .Call(`_treehunt_test_patient_data_has_combination`, data_ptr, patient_idx, combination)
+}
+
+#' @keywords internal
 .test_create_tree_constructor1 <- function(df, depth, upper_bound = NULL, name = NULL) {
     .Call(`_treehunt_test_create_tree_constructor1`, df, depth, upper_bound, name)
 }

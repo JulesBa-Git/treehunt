@@ -10,6 +10,94 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// test_create_patient_data_int
+SEXP test_create_patient_data_int(Rcpp::DataFrame df, SEXP node_column, SEXP target_column, SEXP tree_ptr);
+RcppExport SEXP _treehunt_test_create_patient_data_int(SEXP dfSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP tree_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_create_patient_data_int(df, node_column, target_column, tree_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_create_patient_data_double
+SEXP test_create_patient_data_double(Rcpp::DataFrame df, SEXP node_column, SEXP target_column, SEXP tree_ptr);
+RcppExport SEXP _treehunt_test_create_patient_data_double(SEXP dfSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP tree_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_create_patient_data_double(df, node_column, target_column, tree_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_patient_data_size
+int test_patient_data_size(SEXP data_ptr);
+RcppExport SEXP _treehunt_test_patient_data_size(SEXP data_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data_ptr(data_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_patient_data_size(data_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_patient_data_get_nodes
+Rcpp::IntegerVector test_patient_data_get_nodes(SEXP data_ptr, int patient_idx);
+RcppExport SEXP _treehunt_test_patient_data_get_nodes(SEXP data_ptrSEXP, SEXP patient_idxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data_ptr(data_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type patient_idx(patient_idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_patient_data_get_nodes(data_ptr, patient_idx));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_patient_data_get_target
+int test_patient_data_get_target(SEXP data_ptr, int patient_idx);
+RcppExport SEXP _treehunt_test_patient_data_get_target(SEXP data_ptrSEXP, SEXP patient_idxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data_ptr(data_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type patient_idx(patient_idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_patient_data_get_target(data_ptr, patient_idx));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_patient_data_get_target_double
+double test_patient_data_get_target_double(SEXP data_ptr, int patient_idx);
+RcppExport SEXP _treehunt_test_patient_data_get_target_double(SEXP data_ptrSEXP, SEXP patient_idxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data_ptr(data_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type patient_idx(patient_idxSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_patient_data_get_target_double(data_ptr, patient_idx));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_patient_data_has_combination
+bool test_patient_data_has_combination(SEXP data_ptr, int patient_idx, Rcpp::IntegerVector combination);
+RcppExport SEXP _treehunt_test_patient_data_has_combination(SEXP data_ptrSEXP, SEXP patient_idxSEXP, SEXP combinationSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data_ptr(data_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type patient_idx(patient_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type combination(combinationSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_patient_data_has_combination(data_ptr, patient_idx, combination));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_create_tree_constructor1
 SEXP test_create_tree_constructor1(const Rcpp::DataFrame& df, SEXP depth, SEXP upper_bound, SEXP name);
 RcppExport SEXP _treehunt_test_create_tree_constructor1(SEXP dfSEXP, SEXP depthSEXP, SEXP upper_boundSEXP, SEXP nameSEXP) {
@@ -48,6 +136,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_treehunt_test_create_patient_data_int", (DL_FUNC) &_treehunt_test_create_patient_data_int, 4},
+    {"_treehunt_test_create_patient_data_double", (DL_FUNC) &_treehunt_test_create_patient_data_double, 4},
+    {"_treehunt_test_patient_data_size", (DL_FUNC) &_treehunt_test_patient_data_size, 1},
+    {"_treehunt_test_patient_data_get_nodes", (DL_FUNC) &_treehunt_test_patient_data_get_nodes, 2},
+    {"_treehunt_test_patient_data_get_target", (DL_FUNC) &_treehunt_test_patient_data_get_target, 2},
+    {"_treehunt_test_patient_data_get_target_double", (DL_FUNC) &_treehunt_test_patient_data_get_target_double, 2},
+    {"_treehunt_test_patient_data_has_combination", (DL_FUNC) &_treehunt_test_patient_data_has_combination, 3},
     {"_treehunt_test_create_tree_constructor1", (DL_FUNC) &_treehunt_test_create_tree_constructor1, 4},
     {"_treehunt_test_create_tree_constructor2", (DL_FUNC) &_treehunt_test_create_tree_constructor2, 1},
     {"_treehunt_test_tree_info", (DL_FUNC) &_treehunt_test_tree_info, 1},

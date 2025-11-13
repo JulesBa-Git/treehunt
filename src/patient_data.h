@@ -15,18 +15,14 @@ private :
   
   std::vector<int> parse_node_string(const std::string& node_str) const;
   
+  std::vector<TargetType> extract_column(const Rcpp::DataFrame& df,
+                                         SEXP col_target) const;
+  
 public:
   PatientData() = delete;
   
   PatientData(const Rcpp::DataFrame& df, SEXP node_column, SEXP target_column,
               const tree_structure& tree);
-  
-  PatientData(const std::string& csv_path,
-              const std::string& node_column,
-              const std::string& target_column,
-              const tree_structure& tree,
-              bool has_header = true,
-              char sep = ',');
   
   const std::vector<int>& get_patient_nodes(size_t i) const{
     if (i >= n_patients_) {
@@ -35,7 +31,7 @@ public:
     return patient_nodes_[i];
   }
   
-  TargetType get_patient_target(size_t i) const{
+  TargetType get_target(size_t i) const{
     if( i >= n_patients_)
       Rcpp::stop("Patient index out of bounds");
     return targets_[i];
