@@ -29,8 +29,9 @@ Solution::Solution(std::initializer_list<int> nodes)
 
 Solution Solution::create_random_valid(const tree_structure& tree,
                                        std::mt19937& rng,
-                                       size_t num_nodes,
-                                       int max_attempts){
+                                       size_t target_size,
+                                       int max_attempts,
+                                       bool exact_size){
   
   const auto& depths = tree.get_depth();
   
@@ -39,14 +40,23 @@ Solution Solution::create_random_valid(const tree_structure& tree,
   }
 
   std::uniform_int_distribution<int> dist(0, depths.size() - 1);
-  std::vector<int> nodes; nodes.reserve(num_nodes);
+  std::vector<int> nodes; nodes.reserve(target_size);
   
   for (int attempt = 0; attempt < max_attempts; ++attempt) {
+    
+    size_t num_nodes;
+    if (exact_size) {
+      num_nodes = target_size;
+    } else {
+      std::uniform_int_distribution<size_t> size_dist(1, target_size);
+      num_nodes = size_dist(rng);
+    } 
     
     for (size_t i = 0; i < num_nodes; ++i) {
       nodes.push_back(dist(rng));
     }
     
+    nodes.shrink_to_fit();
     Solution candidate(nodes);  
     
     if (candidate.is_valid(tree)) {
@@ -173,8 +183,7 @@ Solution Solution::mutate_add_remove_type1(const tree_structure& tree,
 
 Solution Solution::mutate_replace_type1(const tree_structure& tree,
                                         std::mt19937& rng) const{
-  int max_attempts = 1000;
-  return create_random_valid(tree, rng, selected_nodes_.size(), max_attempts);
+  return create_random_valid(tree, rng, selected_nodes_.size());
 }
 
 

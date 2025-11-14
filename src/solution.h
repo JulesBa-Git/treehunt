@@ -34,8 +34,9 @@ public:
   // Keeps sampling until valid or max_attempts reached
   static Solution create_random_valid(const tree_structure& tree,
                                       std::mt19937& rng,
-                                      size_t max_nodes,
-                                      int max_attempts = 1000);
+                                      size_t target_size,
+                                      int max_attempts = 1000,
+                                      bool exact_size = true);
   
   
   const std::vector<int>& get_nodes() const { 
