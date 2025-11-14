@@ -1,0 +1,202 @@
+#include "solution.h"
+#include "tree_structure.h"
+#include "patient_data.h"
+
+size_t Solution::compute_hash_internal() const{
+  size_t seed = selected_nodes_.size();
+  
+  for(int node : selected_nodes_){
+    // Boost hash_combine formula
+    seed ^= std::hash<int>{}(node) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+  
+  return seed;
+}
+
+
+Solution::Solution() : selected_nodes_{}, score_{0.0}, score_computed_{false},
+ hash_{0}, hash_computed_{false}
+{}
+
+Solution::Solution(std::vector<int> nodes) : selected_nodes_{std::move(nodes)},
+ score_{0.0}, score_computed_{false}, hash_{0}, hash_computed_{false} {
+   
+   std::sort(selected_nodes_.begin(), selected_nodes_.end());
+ }
+
+Solution::Solution(std::initializer_list<int> nodes)
+  : Solution(std::vector<int>(nodes)) {}
+
+Solution Solution::create_random_valid(const tree_structure& tree,
+                                       std::mt19937& rng,
+                                       size_t num_nodes,
+                                       int max_attempts){
+  
+  const auto& depths = tree.get_depth();
+  
+  if (depths.empty()) {
+    return Solution();
+  }
+
+  std::uniform_int_distribution<int> dist(0, depths.size() - 1);
+  std::vector<int> nodes; nodes.reserve(num_nodes);
+  
+  for (int attempt = 0; attempt < max_attempts; ++attempt) {
+    
+    for (size_t i = 0; i < num_nodes; ++i) {
+      nodes.push_back(dist(rng));
+    }
+    
+    Solution candidate(nodes);  
+    
+    if (candidate.is_valid(tree)) {
+      return candidate;
+    }
+    
+    nodes.clear();
+  }
+  // Failed to find valid solution
+  Rcpp::warning("Could not generate valid solution in max_attempts. Returning single node.");
+  return Solution{std::vector<int>{dist(rng)}};
+}
+
+bool Solution::is_valid(const tree_structure& tree) const{
+  if(selected_nodes_.empty())
+    return false;
+  
+  const auto& upper_bound = tree.get_upper_bound();
+  
+  for(size_t i = 0; i < selected_nodes_.size()-1; ++i){
+    int node_a = selected_nodes_[i];
+    for(size_t j = i+1; j < selected_nodes_.size() ; ++j){
+      int node_b = selected_nodes_[j];
+      
+      //node b below node a, l.e. and g.e. to check equality
+      if(node_b >= node_a && node_b <= upper_bound[node_a])
+        return false;
+      
+      //node a below node b, l.e. and g.e. to check equality
+      if(node_a >= node_b && node_a <= upper_bound[node_b])
+        return false;
+    }
+  }
+  
+  return true;
+}
+
+std::vector<std::pair<int,int>> Solution::determine_vertex(
+    const tree_structure& tree) const{
+  std::vector<std::pair<int,int>> vertex;
+  const auto& depth = tree.get_depth();
+  const auto& upper_bound = tree.get_upper_bound();
+  
+  for(int node : selected_nodes_){
+    //if we are below a root node
+    if(depth[node] > 1){
+      int idx = node-1;
+      //we find the father
+      while(depth[idx] != depth[node] - 1){
+        --idx;
+      }
+      vertex.push_back(std::make_pair(node,idx));
+    }
+    
+    //if this node have son we add all of his sons
+    if(node != upper_bound[node]){
+      for(int i = node+1; i <= upper_bound[node]; ++i){
+        if(depth[i] == depth[node]+1){
+          vertex.push_back(std::make_pair(node,i));
+        }
+      }
+    }
+  }
+  return vertex;
+}
+
+Solution Solution::mutate_swap_type2(const tree_structure& tree,
+                                     std::mt19937& rng) const{
+  auto vertex = determine_vertex(tree);
+  
+  std::uniform_int_distribution<size_t> vertex_range(0, vertex.size()-1);
+  size_t chosen_index = vertex_range(rng);
+  
+  std::vector<int> new_nodes = selected_nodes_;
+  new_nodes.reserve(selected_nodes_.size());
+  
+  int node_to_remove = vertex[chosen_index].first;
+  int node_to_add = vertex[chosen_index].second;
+  
+  for(int node : selected_nodes_){
+    if(node != node_to_remove)
+      new_nodes.push_back(node);
+  }
+  
+  new_nodes.push_back(node_to_add);
+  
+  return Solution{std::move(new_nodes)};
+}
+
+Solution Solution::mutate_add_remove_type1(const tree_structure& tree, 
+                                           double alpha,
+                                           std::mt19937& rng) const{
+  std::uniform_real_distribution<double> runif(0.0,1.0);
+  double prob = runif(rng);
+  
+  auto new_nodes = selected_nodes_;
+  //we add if size of solution is 1 or with probability alpha / solution_size
+  if(selected_nodes_.size() <= 1 || prob <= alpha / selected_nodes_.size()){
+    std::uniform_int_distribution<int> nodes_sampler(0, tree.get_depth().size()-1);
+    int new_node = -1;
+    int max_attempts = 100;
+    for (int attempt = 0; attempt < max_attempts; ++attempt) {
+      int candidate = nodes_sampler(rng);
+      if(std::find(selected_nodes_.begin(), selected_nodes_.end(),
+                   candidate) == selected_nodes_.end()){
+       new_node = candidate;
+       break; 
+      }
+    }
+    if(new_node == -1){
+      Rcpp::warning("In mutation 1, couldn't add a candidate to the solution in "
+                      + std::to_string(max_attempts) + "attempts");
+      return *this;
+    }
+    new_nodes.push_back(new_node);
+  }else{
+    //we remove with probability 1- (alpha/p)
+    std::uniform_int_distribution<size_t> index_sampler(0, selected_nodes_.size()-1);
+    size_t index_to_remove = index_sampler(rng);
+    new_nodes.erase(new_nodes.begin() + index_to_remove);
+  }
+  return Solution(std::move(new_nodes));
+}
+
+Solution Solution::mutate_replace_type1(const tree_structure& tree,
+                                        std::mt19937& rng) const{
+  int max_attempts = 1000;
+  return create_random_valid(tree, rng, selected_nodes_.size(), max_attempts);
+}
+
+
+void Solution::print() const {
+  Rcpp::Rcout << "Solution(nodes=[";
+  for (size_t i = 0; i < selected_nodes_.size(); ++i) {
+    Rcpp::Rcout << selected_nodes_[i];
+    if (i < selected_nodes_.size() - 1) {
+      Rcpp::Rcout << ", ";
+    }
+  }
+  Rcpp::Rcout << "], score=";
+  if (score_computed_) {
+    Rcpp::Rcout << score_;
+  } else {
+    Rcpp::Rcout << "NOT_COMPUTED";
+  }
+  Rcpp::Rcout << ", hash=";
+  if (hash_computed_) {
+    Rcpp::Rcout << hash_;
+  } else {
+    Rcpp::Rcout << "NOT_COMPUTED";
+  }
+  Rcpp::Rcout << ")\n";
+}
