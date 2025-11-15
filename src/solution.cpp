@@ -186,6 +186,48 @@ Solution Solution::mutate_replace_type1(const tree_structure& tree,
   return create_random_valid(tree, rng, selected_nodes_.size());
 }
 
+std::pair<Solution, Solution> Solution::crossover_single_point(
+    const Solution& parent1,
+    const Solution& parent2,
+    const tree_structure& tree,
+    std::mt19937& rng){
+  const auto& depths = tree.get_depth();
+  const auto& upper_bound = tree.get_upper_bound();
+  int max_depth = tree.max_depth();
+  
+  std::vector<size_t> non_leaf_nodes;
+  non_leaf_nodes.reserve(depths.size());
+  
+  for(size_t i = 0 ; i < depths.size(); ++i){
+    if(depths[i] != max_depth)
+      non_leaf_nodes.push_back(i);
+  }
+  non_leaf_nodes.shrink_to_fit();
+  
+  std::uniform_int_distribution<size_t> 
+    internal_node_sampler(0, non_leaf_nodes.size()-1);
+  auto selected_node = non_leaf_nodes[internal_node_sampler(rng)];
+  
+  std::vector<int> selected_node_sol_1, selected_node_sol_2;
+  for(auto node : parent1.get_nodes()){
+    if(node >= selected_node && node <= upper_bound[selected_node]){
+      selected_node_sol_2.push_back(node);
+    }else{
+      selected_node_sol_1.push_back(node);
+    }
+  }
+  
+  for(auto node : parent2.get_nodes()){
+    if(node >= selected_node && node <= upper_bound[selected_node]){
+      selected_node_sol_1.push_back(node);
+    }else{
+      selected_node_sol_2.push_back(node);
+    }
+  }
+    
+  return std::make_pair(Solution(std::move(selected_node_sol_1)),
+                        Solution(std::move(selected_node_sol_2)));
+}
 
 void Solution::print() const {
   Rcpp::Rcout << "Solution(nodes=[";

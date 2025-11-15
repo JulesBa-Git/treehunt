@@ -98,10 +98,11 @@ public:
                                    double alpha, std::mt19937& rng) const;
   Solution mutate_replace_type1(const tree_structure& tree, std::mt19937& rng) const;
   
-  // Crossover operators (static) ! TODO !
+  // Crossover operators (static)
   static std::pair<Solution, Solution> crossover_single_point(
       const Solution& parent1,
       const Solution& parent2,
+      const tree_structure& tree,
       std::mt19937& rng);
   
   // Comparison operators (for sorting purposes (by score))
