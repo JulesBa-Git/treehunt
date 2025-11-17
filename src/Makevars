@@ -1,1 +1,5 @@
 CXX_STD = CXX17
+
+# temporary flags switch to SHLIB_OPENMP soon
+PKG_CXXFLAGS = -Xclang -fopenmp
+PKG_LIBS = -lomp
