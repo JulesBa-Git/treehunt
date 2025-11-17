@@ -37,6 +37,116 @@
 }
 
 #' @keywords internal
+.test_create_solution <- function(nodes) {
+    .Call(`_treehunt_test_create_solution`, nodes)
+}
+
+#' @keywords internal
+.test_solution_get_nodes <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_get_nodes`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_size <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_size`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_empty <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_empty`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_set_score <- function(sol_ptr, score) {
+    invisible(.Call(`_treehunt_test_solution_set_score`, sol_ptr, score))
+}
+
+#' @keywords internal
+.test_solution_get_score <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_get_score`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_is_score_computed <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_is_score_computed`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_invalidate_score <- function(sol_ptr) {
+    invisible(.Call(`_treehunt_test_solution_invalidate_score`, sol_ptr))
+}
+
+#' @keywords internal
+.test_solution_get_hash <- function(sol_ptr) {
+    .Call(`_treehunt_test_solution_get_hash`, sol_ptr)
+}
+
+#' @keywords internal
+.test_solution_invalidate_hash <- function(sol_ptr) {
+    invisible(.Call(`_treehunt_test_solution_invalidate_hash`, sol_ptr))
+}
+
+#' @keywords internal
+.test_solution_invalidate <- function(sol_ptr) {
+    invisible(.Call(`_treehunt_test_solution_invalidate`, sol_ptr))
+}
+
+#' @keywords internal
+.test_solution_is_valid <- function(sol_ptr, tree_ptr) {
+    .Call(`_treehunt_test_solution_is_valid`, sol_ptr, tree_ptr)
+}
+
+#' @keywords internal
+.test_solution_contains <- function(sol_ptr, node) {
+    .Call(`_treehunt_test_solution_contains`, sol_ptr, node)
+}
+
+#' @keywords internal
+.test_solution_print <- function(sol_ptr) {
+    invisible(.Call(`_treehunt_test_solution_print`, sol_ptr))
+}
+
+#' @keywords internal
+.test_solution_less_than <- function(sol1_ptr, sol2_ptr) {
+    .Call(`_treehunt_test_solution_less_than`, sol1_ptr, sol2_ptr)
+}
+
+#' @keywords internal
+.test_solution_greater_than <- function(sol1_ptr, sol2_ptr) {
+    .Call(`_treehunt_test_solution_greater_than`, sol1_ptr, sol2_ptr)
+}
+
+#' @keywords internal
+.test_solution_equals <- function(sol1_ptr, sol2_ptr) {
+    .Call(`_treehunt_test_solution_equals`, sol1_ptr, sol2_ptr)
+}
+
+#' @keywords internal
+.test_create_random_valid_solution <- function(tree_ptr, target_size, seed, exact_size = TRUE) {
+    .Call(`_treehunt_test_create_random_valid_solution`, tree_ptr, target_size, seed, exact_size)
+}
+
+#' @keywords internal
+.test_solution_mutate_swap_type2 <- function(sol_ptr, tree_ptr, seed) {
+    .Call(`_treehunt_test_solution_mutate_swap_type2`, sol_ptr, tree_ptr, seed)
+}
+
+#' @keywords internal
+.test_solution_mutate_add_remove_type1 <- function(sol_ptr, tree_ptr, alpha, seed) {
+    .Call(`_treehunt_test_solution_mutate_add_remove_type1`, sol_ptr, tree_ptr, alpha, seed)
+}
+
+#' @keywords internal
+.test_solution_mutate_replace_type1 <- function(sol_ptr, tree_ptr, seed) {
+    .Call(`_treehunt_test_solution_mutate_replace_type1`, sol_ptr, tree_ptr, seed)
+}
+
+#' @keywords internal
+.test_solution_crossover_single_point <- function(sol1_ptr, sol2_ptr, tree_ptr, seed) {
+    .Call(`_treehunt_test_solution_crossover_single_point`, sol1_ptr, sol2_ptr, tree_ptr, seed)
+}
+
+#' @keywords internal
 .test_create_tree_constructor1 <- function(df, depth, upper_bound = NULL, name = NULL) {
     .Call(`_treehunt_test_create_tree_constructor1`, df, depth, upper_bound, name)
 }

@@ -21,7 +21,7 @@ private:
   
 public:
 
-  Solution();
+  Solution() = delete;
   explicit Solution(std::vector<int> nodes);
   Solution(std::initializer_list<int> nodes);
   

@@ -98,6 +98,262 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_create_solution
+SEXP test_create_solution(Rcpp::IntegerVector nodes);
+RcppExport SEXP _treehunt_test_create_solution(SEXP nodesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type nodes(nodesSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_create_solution(nodes));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_get_nodes
+Rcpp::IntegerVector test_solution_get_nodes(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_get_nodes(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_get_nodes(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_size
+int test_solution_size(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_size(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_size(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_empty
+bool test_solution_empty(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_empty(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_empty(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_set_score
+void test_solution_set_score(SEXP sol_ptr, double score);
+RcppExport SEXP _treehunt_test_solution_set_score(SEXP sol_ptrSEXP, SEXP scoreSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< double >::type score(scoreSEXP);
+    test_solution_set_score(sol_ptr, score);
+    return R_NilValue;
+END_RCPP
+}
+// test_solution_get_score
+double test_solution_get_score(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_get_score(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_get_score(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_is_score_computed
+bool test_solution_is_score_computed(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_is_score_computed(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_is_score_computed(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_invalidate_score
+void test_solution_invalidate_score(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_invalidate_score(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    test_solution_invalidate_score(sol_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// test_solution_get_hash
+double test_solution_get_hash(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_get_hash(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_get_hash(sol_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_invalidate_hash
+void test_solution_invalidate_hash(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_invalidate_hash(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    test_solution_invalidate_hash(sol_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// test_solution_invalidate
+void test_solution_invalidate(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_invalidate(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    test_solution_invalidate(sol_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// test_solution_is_valid
+bool test_solution_is_valid(SEXP sol_ptr, SEXP tree_ptr);
+RcppExport SEXP _treehunt_test_solution_is_valid(SEXP sol_ptrSEXP, SEXP tree_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_is_valid(sol_ptr, tree_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_contains
+bool test_solution_contains(SEXP sol_ptr, int node);
+RcppExport SEXP _treehunt_test_solution_contains(SEXP sol_ptrSEXP, SEXP nodeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type node(nodeSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_contains(sol_ptr, node));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_print
+void test_solution_print(SEXP sol_ptr);
+RcppExport SEXP _treehunt_test_solution_print(SEXP sol_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    test_solution_print(sol_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// test_solution_less_than
+bool test_solution_less_than(SEXP sol1_ptr, SEXP sol2_ptr);
+RcppExport SEXP _treehunt_test_solution_less_than(SEXP sol1_ptrSEXP, SEXP sol2_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol1_ptr(sol1_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sol2_ptr(sol2_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_less_than(sol1_ptr, sol2_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_greater_than
+bool test_solution_greater_than(SEXP sol1_ptr, SEXP sol2_ptr);
+RcppExport SEXP _treehunt_test_solution_greater_than(SEXP sol1_ptrSEXP, SEXP sol2_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol1_ptr(sol1_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sol2_ptr(sol2_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_greater_than(sol1_ptr, sol2_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_equals
+bool test_solution_equals(SEXP sol1_ptr, SEXP sol2_ptr);
+RcppExport SEXP _treehunt_test_solution_equals(SEXP sol1_ptrSEXP, SEXP sol2_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol1_ptr(sol1_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sol2_ptr(sol2_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_equals(sol1_ptr, sol2_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_create_random_valid_solution
+SEXP test_create_random_valid_solution(SEXP tree_ptr, int target_size, int seed, bool exact_size);
+RcppExport SEXP _treehunt_test_create_random_valid_solution(SEXP tree_ptrSEXP, SEXP target_sizeSEXP, SEXP seedSEXP, SEXP exact_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type target_size(target_sizeSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type exact_size(exact_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_create_random_valid_solution(tree_ptr, target_size, seed, exact_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_mutate_swap_type2
+SEXP test_solution_mutate_swap_type2(SEXP sol_ptr, SEXP tree_ptr, int seed);
+RcppExport SEXP _treehunt_test_solution_mutate_swap_type2(SEXP sol_ptrSEXP, SEXP tree_ptrSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_mutate_swap_type2(sol_ptr, tree_ptr, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_mutate_add_remove_type1
+SEXP test_solution_mutate_add_remove_type1(SEXP sol_ptr, SEXP tree_ptr, double alpha, int seed);
+RcppExport SEXP _treehunt_test_solution_mutate_add_remove_type1(SEXP sol_ptrSEXP, SEXP tree_ptrSEXP, SEXP alphaSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_mutate_add_remove_type1(sol_ptr, tree_ptr, alpha, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_mutate_replace_type1
+SEXP test_solution_mutate_replace_type1(SEXP sol_ptr, SEXP tree_ptr, int seed);
+RcppExport SEXP _treehunt_test_solution_mutate_replace_type1(SEXP sol_ptrSEXP, SEXP tree_ptrSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol_ptr(sol_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_mutate_replace_type1(sol_ptr, tree_ptr, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_solution_crossover_single_point
+Rcpp::List test_solution_crossover_single_point(SEXP sol1_ptr, SEXP sol2_ptr, SEXP tree_ptr, int seed);
+RcppExport SEXP _treehunt_test_solution_crossover_single_point(SEXP sol1_ptrSEXP, SEXP sol2_ptrSEXP, SEXP tree_ptrSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type sol1_ptr(sol1_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sol2_ptr(sol2_ptrSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type tree_ptr(tree_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_solution_crossover_single_point(sol1_ptr, sol2_ptr, tree_ptr, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_create_tree_constructor1
 SEXP test_create_tree_constructor1(const Rcpp::DataFrame& df, SEXP depth, SEXP upper_bound, SEXP name);
 RcppExport SEXP _treehunt_test_create_tree_constructor1(SEXP dfSEXP, SEXP depthSEXP, SEXP upper_boundSEXP, SEXP nameSEXP) {
@@ -143,6 +399,28 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_patient_data_get_target", (DL_FUNC) &_treehunt_test_patient_data_get_target, 2},
     {"_treehunt_test_patient_data_get_target_double", (DL_FUNC) &_treehunt_test_patient_data_get_target_double, 2},
     {"_treehunt_test_patient_data_has_combination", (DL_FUNC) &_treehunt_test_patient_data_has_combination, 3},
+    {"_treehunt_test_create_solution", (DL_FUNC) &_treehunt_test_create_solution, 1},
+    {"_treehunt_test_solution_get_nodes", (DL_FUNC) &_treehunt_test_solution_get_nodes, 1},
+    {"_treehunt_test_solution_size", (DL_FUNC) &_treehunt_test_solution_size, 1},
+    {"_treehunt_test_solution_empty", (DL_FUNC) &_treehunt_test_solution_empty, 1},
+    {"_treehunt_test_solution_set_score", (DL_FUNC) &_treehunt_test_solution_set_score, 2},
+    {"_treehunt_test_solution_get_score", (DL_FUNC) &_treehunt_test_solution_get_score, 1},
+    {"_treehunt_test_solution_is_score_computed", (DL_FUNC) &_treehunt_test_solution_is_score_computed, 1},
+    {"_treehunt_test_solution_invalidate_score", (DL_FUNC) &_treehunt_test_solution_invalidate_score, 1},
+    {"_treehunt_test_solution_get_hash", (DL_FUNC) &_treehunt_test_solution_get_hash, 1},
+    {"_treehunt_test_solution_invalidate_hash", (DL_FUNC) &_treehunt_test_solution_invalidate_hash, 1},
+    {"_treehunt_test_solution_invalidate", (DL_FUNC) &_treehunt_test_solution_invalidate, 1},
+    {"_treehunt_test_solution_is_valid", (DL_FUNC) &_treehunt_test_solution_is_valid, 2},
+    {"_treehunt_test_solution_contains", (DL_FUNC) &_treehunt_test_solution_contains, 2},
+    {"_treehunt_test_solution_print", (DL_FUNC) &_treehunt_test_solution_print, 1},
+    {"_treehunt_test_solution_less_than", (DL_FUNC) &_treehunt_test_solution_less_than, 2},
+    {"_treehunt_test_solution_greater_than", (DL_FUNC) &_treehunt_test_solution_greater_than, 2},
+    {"_treehunt_test_solution_equals", (DL_FUNC) &_treehunt_test_solution_equals, 2},
+    {"_treehunt_test_create_random_valid_solution", (DL_FUNC) &_treehunt_test_create_random_valid_solution, 4},
+    {"_treehunt_test_solution_mutate_swap_type2", (DL_FUNC) &_treehunt_test_solution_mutate_swap_type2, 3},
+    {"_treehunt_test_solution_mutate_add_remove_type1", (DL_FUNC) &_treehunt_test_solution_mutate_add_remove_type1, 4},
+    {"_treehunt_test_solution_mutate_replace_type1", (DL_FUNC) &_treehunt_test_solution_mutate_replace_type1, 3},
+    {"_treehunt_test_solution_crossover_single_point", (DL_FUNC) &_treehunt_test_solution_crossover_single_point, 4},
     {"_treehunt_test_create_tree_constructor1", (DL_FUNC) &_treehunt_test_create_tree_constructor1, 4},
     {"_treehunt_test_create_tree_constructor2", (DL_FUNC) &_treehunt_test_create_tree_constructor2, 1},
     {"_treehunt_test_tree_info", (DL_FUNC) &_treehunt_test_tree_info, 1},

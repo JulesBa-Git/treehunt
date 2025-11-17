@@ -13,13 +13,11 @@ size_t Solution::compute_hash_internal() const{
   return seed;
 }
 
-
-Solution::Solution() : selected_nodes_{}, score_{0.0}, score_computed_{false},
- hash_{0}, hash_computed_{false}
-{}
-
 Solution::Solution(std::vector<int> nodes) : selected_nodes_{std::move(nodes)},
  score_{0.0}, score_computed_{false}, hash_{0}, hash_computed_{false} {
+   
+   if(selected_nodes_.empty())
+     Rcpp::stop("Cannot create a solution from an empty vector");
    
    std::sort(selected_nodes_.begin(), selected_nodes_.end());
  }
@@ -36,7 +34,7 @@ Solution Solution::create_random_valid(const tree_structure& tree,
   const auto& depths = tree.get_depth();
   
   if (depths.empty()) {
-    return Solution();
+    Rcpp::stop("Cannot create a solution, tree is empty");
   }
 
   std::uniform_int_distribution<int> dist(0, depths.size() - 1);
@@ -73,6 +71,13 @@ Solution Solution::create_random_valid(const tree_structure& tree,
 bool Solution::is_valid(const tree_structure& tree) const{
   if(selected_nodes_.empty())
     return false;
+  
+  // Check for duplicates
+  for (size_t i = 1; i < selected_nodes_.size(); ++i) {
+    if (selected_nodes_[i] == selected_nodes_[i-1]) {
+      return false; 
+    }
+  }
   
   const auto& upper_bound = tree.get_upper_bound();
   
@@ -125,12 +130,15 @@ std::vector<std::pair<int,int>> Solution::determine_vertex(
 
 Solution Solution::mutate_swap_type2(const tree_structure& tree,
                                      std::mt19937& rng) const{
+  if(empty()){
+    return *this;
+  }
   auto vertex = determine_vertex(tree);
   
   std::uniform_int_distribution<size_t> vertex_range(0, vertex.size()-1);
   size_t chosen_index = vertex_range(rng);
   
-  std::vector<int> new_nodes = selected_nodes_;
+  std::vector<int> new_nodes;
   new_nodes.reserve(selected_nodes_.size());
   
   int node_to_remove = vertex[chosen_index].first;
@@ -193,18 +201,21 @@ std::pair<Solution, Solution> Solution::crossover_single_point(
     std::mt19937& rng){
   const auto& depths = tree.get_depth();
   const auto& upper_bound = tree.get_upper_bound();
-  int max_depth = tree.max_depth();
   
-  std::vector<size_t> non_leaf_nodes;
+  std::vector<int> non_leaf_nodes;
   non_leaf_nodes.reserve(depths.size());
   
   for(size_t i = 0 ; i < depths.size(); ++i){
-    if(depths[i] != max_depth)
+    if(i != upper_bound[i])
       non_leaf_nodes.push_back(i);
   }
   non_leaf_nodes.shrink_to_fit();
   
-  std::uniform_int_distribution<size_t> 
+  //if no internal node in the tree
+  if(non_leaf_nodes.empty())
+    return {parent1, parent2};
+  
+  std::uniform_int_distribution<int> 
     internal_node_sampler(0, non_leaf_nodes.size()-1);
   auto selected_node = non_leaf_nodes[internal_node_sampler(rng)];
   
@@ -224,7 +235,14 @@ std::pair<Solution, Solution> Solution::crossover_single_point(
       selected_node_sol_2.push_back(node);
     }
   }
-    
+  
+  if(selected_node_sol_1.empty()){
+    selected_node_sol_1.push_back(selected_node);
+  }
+  if(selected_node_sol_2.empty()){
+    selected_node_sol_2.push_back(selected_node);
+  }
+  
   return std::make_pair(Solution(std::move(selected_node_sol_1)),
                         Solution(std::move(selected_node_sol_2)));
 }

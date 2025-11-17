@@ -86,3 +86,10 @@ test_that("cannot create a tree from wrong depth or wrong index",{
   )
   
 })
+
+test_that("empty tree should stop program",{
+  depth_vec <- integer(0)
+  
+  expect_error(make_test_tree_ctr2(depth_vec),
+               "No value in depth vector")
+})
