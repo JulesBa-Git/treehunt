@@ -57,6 +57,24 @@ double MCMCAlgorithm<TargetType>::compute_acceptance_probability_type2(
 }
 
 template<typename TargetType>
+typename ScoreFunctions<TargetType>::ScoreData 
+MCMCAlgorithm<TargetType>::compute_score(const Solution& sol) const{
+  switch(params_.score_type_){
+  case ScoreType::HYPERGEOMETRIC :
+    return ScoreFunctions<TargetType>::compute_hypergeometric_with_data(
+      data_, sol, true);
+  
+  case ScoreType::RELATIVE_RISK :
+    return ScoreFunctions<TargetType>::compute_relative_risk_with_data(
+      data_, sol);
+  
+  default:
+    Rcpp::stop("Unknown score type");
+  
+  }  
+}
+
+template<typename TargetType>
 void MCMCAlgorithm<TargetType>::update_score_distribution(double score, 
                                                           size_t covered_patients) {
   if (score < params_.max_score) {
@@ -156,8 +174,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
                                             1000, true);
   }
   
-  auto current_score_data = ScoreFunctions<TargetType>::compute_hypergeometric_with_data(
-    data_, current, true);
+  auto current_score_data = compute_score(current);
   double current_score = std::min(current_score_data.score, params_.max_score);
   
   std::uniform_real_distribution<double> uniform(0.0, 1.0);
@@ -176,8 +193,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
       } else {
         ++results_.type1_in_population;
         
-        auto proposed_score_data = ScoreFunctions<TargetType>::compute_hypergeometric_with_data(
-          data_, proposed, true);
+        auto proposed_score_data = compute_score(proposed);
         double proposed_score = std::min(proposed_score_data.score, params_.max_score);
         
         double acceptance_prob = compute_acceptance_probability_type1(current_score, 
@@ -211,8 +227,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
         } else {
           ++results_.type2_in_population;
           
-          auto proposed_score_data = ScoreFunctions<TargetType>::compute_hypergeometric_with_data(
-            data_, proposed, true);
+          auto proposed_score_data = compute_score(proposed);
           double proposed_score = std::min(proposed_score_data.score, params_.max_score);
           
           auto proposed_vertices = proposed.determine_vertex(tree_);

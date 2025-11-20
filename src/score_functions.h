@@ -7,6 +7,11 @@
 #include "solution.h"
 #include "patient_data.h"
 
+enum class ScoreType{
+  HYPERGEOMETRIC,
+  RELATIVE_RISK
+};
+
 template<typename TargetType>
 class ScoreFunctions{
   

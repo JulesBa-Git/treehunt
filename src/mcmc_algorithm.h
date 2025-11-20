@@ -22,11 +22,13 @@ struct MCMCParams {
   size_t beta;              
   double max_score;         
   int seed;
+  ScoreType score_type_;
   bool verbose;
   
   MCMCParams() : epochs(10000), temperature(1.0), n_results(10), 
   cocktail_size(3), prob_mutation_type1(0.5), 
-  beta(5), max_score(100.0), seed(42), verbose(false) {}
+  beta(5), max_score(100.0), seed(42), score_type_(ScoreType::HYPERGEOMETRIC),
+  verbose(false) {}
 };
 
 // Results structure
@@ -103,6 +105,7 @@ private:
   double compute_acceptance_probability_type1(double current_score, double proposed_score);
   double compute_acceptance_probability_type2(double current_score, double proposed_score,
                                              size_t n_vertex_current, size_t n_vertex_proposed);
+  typename ScoreFunctions<TargetType>::ScoreData compute_score(const Solution& sol) const;
   void update_score_distribution(double score, size_t covered_patients);
   void update_top_solutions(const Solution& sol, double score, int covered_patients);
   void finalize_results();
