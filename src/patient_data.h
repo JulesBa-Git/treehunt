@@ -43,6 +43,14 @@ public:
     return tree_;
   }
   
+  double mean_patient_nodes() const{
+    double total_size = 0.0;
+    for(const auto& node : patient_nodes_){
+      total_size += node.size();
+    }
+    return total_size / static_cast<double>(patient_nodes_.size());
+  }
+  
   bool patient_has_combination(size_t i,
                                const std::vector<int>& solution_nodes) const{
     if(i >= n_patients_)

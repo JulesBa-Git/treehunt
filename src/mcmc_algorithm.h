@@ -9,7 +9,6 @@
 #include <utility>
 #include "solution.h"
 #include "patient_data.h"
-#include "tree_structure.h"
 #include "score_functions.h"
 
 // Parameters structure for MCMC
@@ -21,13 +20,12 @@ struct MCMCParams {
   double prob_mutation_type1;
   size_t beta;              
   double max_score;         
-  int seed;
   ScoreType score_type_;
   bool verbose;
   
   MCMCParams() : epochs(10000), temperature(1.0), n_results(10), 
   cocktail_size(3), prob_mutation_type1(0.5), 
-  beta(5), max_score(100.0), seed(42), score_type_(ScoreType::HYPERGEOMETRIC),
+  beta(5), max_score(100.0), score_type_(ScoreType::HYPERGEOMETRIC),
   verbose(false) {}
 };
 
@@ -70,7 +68,6 @@ template<typename TargetType>
 class MCMCAlgorithm {
 private:
   const PatientData<TargetType>& data_;
-  const tree_structure& tree_;
   MCMCParams params_;
   std::mt19937 rng_;
   MCMCResults results_;
@@ -112,7 +109,6 @@ private:
   
 public:
   MCMCAlgorithm(const PatientData<TargetType>& data,
-                const tree_structure& tree,
                 const MCMCParams& params);
   
   MCMCResults run();

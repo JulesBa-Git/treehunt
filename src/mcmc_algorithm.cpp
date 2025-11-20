@@ -2,15 +2,23 @@
 
 template<typename TargetType>
 MCMCAlgorithm<TargetType>::MCMCAlgorithm(const PatientData<TargetType>& data,
-                                         const tree_structure& tree,
                                          const MCMCParams& params)
-  : data_(data), tree_(tree), params_(params), rng_(params.seed),
+  : data_{data}, params_{params},
     min_score_(0.0), min_score_filtered_(0.0) {
   
   size_t n_bins = static_cast<size_t>(params_.max_score * 10) + 1;
   results_.score_distribution.resize(n_bins, 0);
   results_.score_distribution_filtered.resize(n_bins, 0);
   results_.cocktail_size = params_.cocktail_size;
+  std::random_device rd;
+  std::vector<unsigned int> seed_data;
+  for (int i = 0; i < 4; ++i) {
+    seed_data.push_back(rd());
+  }
+  
+  std::seed_seq seq(seed_data.begin(), seed_data.end());
+  
+  rng_ = std::mt19937(seq);
 }
 
 template<typename TargetType>
@@ -29,14 +37,14 @@ bool MCMCAlgorithm<TargetType>::is_in_population(const Solution& sol) const {
 template<typename TargetType>
 Solution MCMCAlgorithm<TargetType>::propose_type1_mutation() {
   // Type 1: Generate completely new random solution
-  return Solution::create_random_valid(tree_, rng_, params_.cocktail_size, 
+  return Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size, 
                                        100, true);
 }
 
 template<typename TargetType>
 Solution MCMCAlgorithm<TargetType>::propose_type2_mutation(const Solution& current) {
   // Type 2: Swap one node with its parent or child
-  return current.mutate_swap_type2(tree_, rng_);
+  return current.mutate_swap_type2(data_.get_tree(), rng_);
 }
 
 template<typename TargetType>
@@ -166,11 +174,11 @@ void MCMCAlgorithm<TargetType>::finalize_results() {
 
 template<typename TargetType>
 MCMCResults MCMCAlgorithm<TargetType>::run() {
-  Solution current = Solution::create_random_valid(tree_, rng_, params_.cocktail_size,
+  Solution current = Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size,
                                                    1000, true);
   
   while (!is_in_population(current)) {
-    current = Solution::create_random_valid(tree_, rng_, params_.cocktail_size,
+    current = Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size,
                                             1000, true);
   }
   
@@ -212,7 +220,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
       
     } else {
       // Type 2 mutation
-      auto current_vertices = current.determine_vertex(tree_);
+      auto current_vertices = current.determine_vertex(data_.get_tree());
       
       if (current_vertices.empty()) {
         ++results_.type2_moves;
@@ -230,7 +238,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
           auto proposed_score_data = compute_score(proposed);
           double proposed_score = std::min(proposed_score_data.score, params_.max_score);
           
-          auto proposed_vertices = proposed.determine_vertex(tree_);
+          auto proposed_vertices = proposed.determine_vertex(data_.get_tree());
           
           double acceptance_prob = compute_acceptance_probability_type2(
             current_score, proposed_score,
