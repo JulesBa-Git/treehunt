@@ -12,6 +12,8 @@ private:
   std::vector<int> depth_;
   std::vector<int> upper_bound_;
   std::vector<std::string> name_;
+  std::vector<int> father_;
+  bool has_father_;
   bool has_name_;
   int max_depth_; 
 public:
@@ -36,6 +38,13 @@ public:
     return name_;
   }
   
+  inline std::vector<int> get_father(){
+    if(!has_father_)
+      compute_father();
+    
+    return father_;
+  }
+  
   inline bool has_name() const{
     return has_name_;
   }
@@ -46,6 +55,7 @@ public:
   
   void initialize_upper_bound();
   void add_names(const Rcpp::CharacterVector& names);
+  void compute_father();
   
 private:
   

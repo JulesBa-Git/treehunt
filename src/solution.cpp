@@ -194,6 +194,17 @@ Solution Solution::mutate_replace_type1(const tree_structure& tree,
   return create_random_valid(tree, rng, selected_nodes_.size());
 }
 
+Solution Solution::mutate_genetic_algorithm(const tree_structure& tree,
+                                        double alpha, std::mt19937& rng) const{
+  double type_probability = R::runif(0.0,1.0);
+  
+  if(type_probability < .5)
+    return mutate_add_remove_type1(tree, alpha, rng);
+  else
+    return mutate_swap_type2(tree, rng);
+  
+}
+
 std::pair<Solution, Solution> Solution::crossover_single_point(
     const Solution& parent1,
     const Solution& parent2,

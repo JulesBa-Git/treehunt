@@ -28,10 +28,12 @@ tree_structure::tree_structure(const Rcpp::DataFrame &Tree, SEXP depth,
   } else {
     has_name_ = false;
   }
+  has_father_ = false;
 }
 
 tree_structure::tree_structure(const Rcpp::IntegerVector& depth): depth_{},
-upper_bound_{}, name_{}, has_name_{false}, max_depth_{} {
+upper_bound_{}, name_{}, father_{}, has_father_{false},has_name_{false},
+max_depth_{} {
   depth_ = Rcpp::as<std::vector<int>>(depth);
   
   if (depth_.empty()) {
@@ -93,6 +95,20 @@ void tree_structure::add_names(const Rcpp::CharacterVector& names){
   
   name_ = Rcpp::as<std::vector<std::string>>(names);
   has_name_ = true;
+}
+
+void tree_structure::compute_father(){
+  if(!has_father_){
+    std::vector<int>current_father(max_depth_ + 1);
+    current_father[0] = -1;
+    
+    std::vector<int> father; father.reserve(depth_.size());
+    for(size_t i = 0 ; i < depth_.size(); ++i){
+      father.push_back(current_father[depth_[i] - 1]);
+      current_father[depth_[i]] = i;
+    }
+    has_father_ = true;
+  }
 }
 
 bool tree_structure::check_depth() const {
