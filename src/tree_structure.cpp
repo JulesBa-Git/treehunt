@@ -28,7 +28,8 @@ tree_structure::tree_structure(const Rcpp::DataFrame &Tree, SEXP depth,
   } else {
     has_name_ = false;
   }
-  has_father_ = false;
+  compute_father();
+  has_father_ = true;
 }
 
 tree_structure::tree_structure(const Rcpp::IntegerVector& depth): depth_{},

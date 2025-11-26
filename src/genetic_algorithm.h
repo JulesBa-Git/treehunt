@@ -1,6 +1,7 @@
 #ifndef GENETIC_ALGORITHM_H
 #define GENETIC_ALGORITHM_H
 
+#include "helpers.h"
 #include "score_functions.h"
 #include "solution.h"
 #include <random>

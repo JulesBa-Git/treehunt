@@ -23,11 +23,11 @@ public:
                  SEXP name = R_NilValue);
   tree_structure(const Rcpp::IntegerVector& depth);
   
-  inline std::vector<int> get_depth() const{
+  inline const std::vector<int>& get_depth() const{
     return depth_;
   }
   
-  inline std::vector<int> get_upper_bound() const{
+  inline const std::vector<int>& get_upper_bound() const{
     return upper_bound_;
   }
   
@@ -38,11 +38,11 @@ public:
     return name_;
   }
   
-  inline std::vector<int> get_father(){
-    if(!has_father_)
-      compute_father();
-    
-    return father_;
+  inline const std::vector<int>& get_father() const{
+    if(has_father_)
+      return father_;
+    else
+      Rcpp::stop("Father of the tree has not been computed.");
   }
   
   inline bool has_name() const{
