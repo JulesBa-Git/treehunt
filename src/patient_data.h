@@ -86,7 +86,7 @@ public:
       for(const auto& nodes : patient_nodes_){
         node_count+= nodes.size();
       }
-      index.reserve(node_count);
+      index.reserve(patient_nodes_.size());
       M.resize(node_count);
       for(size_t i = 0; i < M.size(); ++i)
         M[i].reserve(tree_.max_depth() + 1);
@@ -95,8 +95,12 @@ public:
       size_t current_patient_node_index = 0;
       for(const std::vector<int>& nodes_vector : patient_nodes_){
         for(const auto& node : nodes_vector){
-          //add the node
-          M[row].push_back(node);
+          //if we are not on max_depth, we should push the node on the lower
+          //depth 
+          for(int i = tree_.max_depth(); i >= depth[node]; --i){
+            //add the node
+            M[row].push_back(node);
+          }
           int current_father = father[node];
           //add the father of this node
           while(depth[current_father] != 1){

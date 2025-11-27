@@ -81,7 +81,13 @@ void GeneticAlgorithm<TargetType>::penalize(){
     }
   }
   
-  
+  for(size_t i = 0 ; i < population_.size(); ++i){
+    //Accumulation starts at -1 because the similarity with himself is 1
+    double penalized_score = 
+      population_[i].get_score() / std::accumulate(similarity[i].begin(),
+                                                 similarity[i].end(), -1.0);
+    population_[i].set_score(penalized_score);
+  }
 }
 
 template<typename TargetType>
@@ -176,7 +182,7 @@ void GeneticAlgorithm<TargetType>::run(){
   for(size_t i = 0 ; i < params_.epochs; ++i){
     evaluate();
     if(params_.diversity)
-      //diversity here
+      penalize();
     
     if(params_.elite_count > 0){
       keep_elite(offspring);
