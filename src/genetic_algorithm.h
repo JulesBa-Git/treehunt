@@ -27,14 +27,25 @@ struct GAParams {
   diversity(false), verbose(false) {}
 };
 
+struct GAResults {
+  std::vector<std::vector<int>> final_population;
+  std::vector<double> final_scores;
+  size_t total_generations;
+  size_t cache_hits;
+  
+  GAResults() : total_generations(0) {}
+};
+
 template <typename TargetType>
 class GeneticAlgorithm{
 private:
   std::vector<Solution> population_;
-  std::unordered_map<size_t, double> score_hash_map;
+  std::unordered_map<size_t, double> score_hash_map_;
   const PatientData<TargetType>& data_;
   GAParams params_;
   mutable std::mt19937 rng_; //concurrency not really possible here
+  //tracking of cache_hits
+  size_t cache_hits_;
    
 public :
   GeneticAlgorithm() = delete;
@@ -51,7 +62,10 @@ public :
   void mutate(std::vector<Solution>& offspring) const;
   void crossover(std::vector<Solution>& offspring) const;
   void replace_population(std::vector<Solution>& offspring);
-  void run();
+  GAResults run();
+  
+  GAResults extract_results() const;
+  const std::vector<Solution>& get_population() const { return population_; }
   
 };
 

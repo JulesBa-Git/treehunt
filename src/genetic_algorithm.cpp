@@ -3,7 +3,7 @@
 template<typename TargetType>
 GeneticAlgorithm<TargetType>::GeneticAlgorithm(const PatientData<TargetType>& data,
                                                const GAParams& params)
-  : data_{data}, params_{params} {
+  : data_{data}, params_{params}, cache_hits_{0} {
     
     population_.reserve(params.population_size);
     std::random_device rd;
@@ -50,13 +50,14 @@ template<typename TargetType>
 void GeneticAlgorithm<TargetType>::evaluate(){
   
   for(Solution& solution : population_){
-    auto search = score_hash_map.find(solution.get_hash());
-    if(search != score_hash_map.end()){
+    auto search = score_hash_map_.find(solution.get_hash());
+    if(search != score_hash_map_.end()){
+      ++cache_hits_;
       solution.set_score(search->second);
     }
     else{
       solution.set_score(compute_score(solution));
-      score_hash_map.insert({solution.get_hash(), solution.get_score()});
+      score_hash_map_.insert({solution.get_hash(), solution.get_score()});
     }
   }
 }
@@ -92,12 +93,18 @@ void GeneticAlgorithm<TargetType>::penalize(){
 
 template<typename TargetType>
 void GeneticAlgorithm<TargetType>::keep_elite(std::vector<Solution>& offspring) const{
-  std::priority_queue<Solution> elite_queue(population_.begin(),
-                                            population_.end());
+  std::vector<std::reference_wrapper<const Solution>> sorted_pop(
+      population_.begin(), population_.end());
   
-  for(int i = 0; i < params_.elite_count; ++i){
-    offspring.emplace_back(elite_queue.top());
-    elite_queue.pop();
+  std::partial_sort(sorted_pop.begin(), 
+                    sorted_pop.begin() + params_.elite_count,
+                    sorted_pop.end(),
+                    [](const Solution& a, const Solution& b) {
+                      return a > b; 
+                    });
+  
+  for(size_t i = 0; i < params_.elite_count; ++i){
+    offspring.emplace_back(sorted_pop[i].get());
   }
 }
 
@@ -124,9 +131,9 @@ void GeneticAlgorithm<TargetType>::tournament_selection(
 
 template<typename TargetType>
 void GeneticAlgorithm<TargetType>::mutate(std::vector<Solution>& offspring) const{
-  
+  std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
   for(size_t i = params_.elite_count; i < offspring.size(); ++i){
-    double mutation_probability = R::runif(0.0,1.0);
+    double mutation_probability = prob_dist(rng_);
     
     if(mutation_probability < params_.mutation_rate){
       Solution tmp = offspring[i].mutate_genetic_algorithm(
@@ -143,25 +150,17 @@ void GeneticAlgorithm<TargetType>::mutate(std::vector<Solution>& offspring) cons
 
 template<typename TargetType>
 void GeneticAlgorithm<TargetType>::crossover(std::vector<Solution>& offspring) const{
+  std::uniform_real_distribution<double> prob_dist(0.0, 1.0);
   
-  for(size_t i = 0; i < offspring.size() - 2; i+=2){
-    auto [c1,c2] = Solution::crossover_single_point(offspring[i],
-                                                    offspring[i+1],
-                                                    data_.get_tree(),
-                                                    rng_);
-    offspring[i] = c1;
-    offspring[i+1] = c2;
-  }
-  
-  //for even size population, we have to do one more crossover, if not we 
-  //do no crossover on the last solution.
-  if(offspring.size() % 2 == 0){
-    auto [c1,c2] = Solution::crossover_single_point(offspring[offspring.size()-2],
-                                                    offspring[offspring.size()-1],
-                                                             data_.get_tree(),
-                                                             rng_);
-    offspring[offspring.size()-2] = c1;
-    offspring[offspring.size()-1] = c2;
+  for(size_t i = params_.elite_count; i +1 < offspring.size(); i+=2){
+    if(prob_dist(rng_) < params_.crossover_rate){
+      auto [c1,c2] = Solution::crossover_single_point(offspring[i],
+                                                      offspring[i+1],
+                                                      data_.get_tree(),
+                                                      rng_);
+      offspring[i] = std::move(c1);
+      offspring[i+1] = std::move(c2);
+    }
   }
 }
 
@@ -169,11 +168,29 @@ template<typename TargetType>
 void GeneticAlgorithm<TargetType>::replace_population(std::vector<Solution>& offspring){
   population_ = std::move(offspring);
   offspring.clear();
-  offspring.reserve(population_.size());
+  offspring.reserve(params_.population_size);
 }
 
 template<typename TargetType>
-void GeneticAlgorithm<TargetType>::run(){
+GAResults GeneticAlgorithm<TargetType>::extract_results() const {
+  GAResults results;
+  results.cache_hits = cache_hits_;
+  results.total_generations = params_.epochs;
+  
+  // Final population
+  results.final_population.reserve(population_.size());
+  results.final_scores.reserve(population_.size());
+  
+  for(const auto& sol : population_){
+    results.final_population.push_back(sol.get_nodes());
+    results.final_scores.push_back(sol.get_score());
+  }
+  
+  return results;
+}
+
+template<typename TargetType>
+GAResults GeneticAlgorithm<TargetType>::run(){
   initialize();
   
   std::vector<Solution> offspring;
@@ -181,8 +198,23 @@ void GeneticAlgorithm<TargetType>::run(){
   
   for(size_t i = 0 ; i < params_.epochs; ++i){
     evaluate();
+    
     if(params_.diversity)
       penalize();
+    
+    if(params_.verbose && (i % 10 == 0 || i == params_.epochs - 1)){
+      // Find current best
+      double best_score = 0.0;
+      for(const auto& sol : population_){
+        if(sol.get_score() > best_score){
+          best_score = sol.get_score();
+        }
+      } 
+      Rcpp::Rcout << "Generation " << i << "/" << params_.epochs 
+                  << " - Best score: " << best_score 
+                  << " - Cache size: " << score_hash_map_.size()
+                  << " - Cache hits: " << cache_hits_ << "\n";
+    } 
     
     if(params_.elite_count > 0){
       keep_elite(offspring);
@@ -194,6 +226,20 @@ void GeneticAlgorithm<TargetType>::run(){
     
     replace_population(offspring);
   }
+  
+  // Final evaluation
+  evaluate();
+  
+  GAResults results = extract_results();
+  
+  if(params_.verbose){
+    Rcpp::Rcout << "\n=== GA Run Complete ===\n";
+    Rcpp::Rcout << "Total generations: " << results.total_generations << "\n";
+    Rcpp::Rcout << "Cache hits: " << results.cache_hits << "\n";
+  }
+  
+  return results;
+  
 }
 
 template class GeneticAlgorithm<int>;
