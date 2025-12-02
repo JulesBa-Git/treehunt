@@ -161,3 +161,207 @@
     .Call(`_treehunt_test_tree_info`, ptr)
 }
 
+#' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
+#' Tree
+#'
+#' Performs a Modified Metropolis-Hastings MCMC sampling to estimate the score
+#' distribution of nodes combination of a given \emph{cocktail_size}. The
+#' algorithm explores the space of tree combinations using a proposal law 
+#' composed of two mutation types.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing drug codes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary for now,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree_depth An integer vector specifying the depth of each node in the
+#'   tree structure. Must start at depth 1 and children must be at depth+1 of
+#'   their parent.
+#' @param epochs Number of MCMC iterations to run.
+#' @param temperature Temperature parameter for the Metropolis-Hastings acceptance
+#'   probability. Higher values lead to an easiest acceptance of lower score. Default: 1.0.
+#' @param n_results Number of top solutions to track and return. Default: 10.
+#' @param cocktail_size Target size of drug combinations to search for. Default: 2.
+#' @param prob_type1 Probability of using Type 1 mutation (random generation) vs
+#'   Type 2 mutation (local swap). Default: 0.01.
+#' @param beta Minimum number of patients that must be covered for a solution to
+#'   be included in the filtered results. Default: 4.
+#' @param max_score Maximum score value for binning in the score distribution.
+#'   Scores above this are tracked separately. Default: 200.0.
+#' @param score_type Scoring function to use. Either "hypergeometric" for the
+#'   hypergeometric test or "relative_risk" for relative risk calculation.
+#'   Default: "hypergeometric".
+#' @param verbose If TRUE, prints progress and statistics during the run.
+#'   Default: FALSE.
+#'
+#' @return A list containing:
+#'   \describe{
+#'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+#'     \item{top_scores}{Numeric vector of scores for the top solutions}
+#'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
+#'     \item{top_scores_filtered}{Scores for the filtered solutions}
+#'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+#'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
+#'     \item{outstanding_scores}{Scores that exceeded max_score}
+#'     \item{statistics}{List of run statistics including acceptance rates}
+#'   }
+#'
+#' @details
+#' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
+#' proposal types:
+#' \itemize{
+#'   \item \strong{Type 1}: Generates a completely new random valid solution
+#'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
+#' }
+#'
+#' The acceptance probability for Type 1 proposal is:
+#' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+#'
+#' For Type 2 proposals, a proposal ratio correction is applied since the ratio
+#' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+#' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+#'
+#' where \eqn{|V|} is the number of possible swap vertices for a solution.
+#'
+#' Solutions are only accepted if they appear in at least one patient's data
+#' ("modified" constraint).
+#'
+#' @examples
+#' \dontrun{
+#' # Create example data
+#' patient_df <- data.frame(
+#'   patient_id = 1:100,
+#'   outcome = rbinom(100, 1, 0.3)
+#' )
+#' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+#'
+#' # Define tree structure (simple 3-level tree)
+#' tree_depth <- c(1, rep(2, 5), rep(3, 15))
+#'
+#' # Run MCMC
+#' results <- run_mcmc(
+#'   patient_data = patient_df,
+#'   node_column = "drugs",
+#'   target_column = "outcome",
+#'   tree_depth = tree_depth,
+#'   epochs = 5000,
+#'   cocktail_size = 2,
+#'   score_type = "hypergeometric",
+#'   verbose = TRUE
+#' )
+#'
+#' # View top results
+#' print(results$top_scores)
+#' print(results$top_solutions)
+#' }
+#'
+#' @export
+run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epochs, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE) {
+    .Call(`_treehunt_run_mcmc`, patient_data, node_column, target_column, tree_depth, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
+}
+
+#' Run Genetic Algorithm for High Score Nodes Combination Search
+#'
+#' Performs a genetic algorithm search to find optimal node combinations that
+#' maximize a specified score function. The algorithm evolves a population of
+#' solutions through selection, crossover, and mutation operations.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing node indexes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree_depth An integer vector specifying the depth of each node in the
+#'   tree structure. Must start at depth 1 and children must be at depth+1 of
+#'   their parent.
+#' @param population_size Number of solutions in the population. Default: 100.
+#' @param epochs Number of generations to evolve. Default: 1000.
+#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+#' @param prob_mutation_type1 When mutation occurs, probability of using Type 1
+#'   (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+#' @param crossover_rate Probability of applying crossover to selected parents.
+#'   Default: 0.8.
+#' @param elite_count Number of top solutions to preserve unchanged each generation.
+#'   Default: 0.
+#' @param tournament_size Number of solutions competing in tournament selection.
+#'   Default: 2.
+#' @param alpha Parameter controlling the add/remove mutation bias. Higher values
+#'   favor adding nodes. Default: 1.0.
+#' @param score_type Scoring function to use. Either "hypergeometric" for the
+#'   hypergeometric test or "relative_risk" for relative risk calculation.
+#'   Default: "hypergeometric".
+#' @param diversity If TRUE, applies a diversity penalty to encourage exploration
+#'   of different solutions. Default: FALSE.
+#' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+#'
+#' @return A list containing:
+#'   \describe{
+#'     \item{final_population}{The complete final population of solutions}
+#'     \item{final_scores}{Scores for all solutions in the final population}
+#'     \item{parameters}{List of parameters used for the run}
+#'     \item{statistics}{Additional information about cache hits etc.}
+#'   }
+#'
+#' @details
+#' The genetic algorithm uses the following operators:
+#' \itemize{
+#'   \item \strong{Selection}: Tournament selection with configurable size
+#'   \item \strong{Crossover}: Single-point crossover on tree subtrees
+#'   \item \strong{Mutation Type 1}: Add or remove a node (probability controlled by alpha)
+#'   \item \strong{Mutation Type 2}: Swap a node with its parent or child
+#'   \item \strong{Elitism}: Top solutions preserved unchanged
+#' }
+#'
+#' The algorithm maintains a score cache to avoid redundant computations for
+#' solutions that have been seen before (identified by hash).
+#'
+#' When \code{diversity = TRUE}, solutions are penalized based on their similarity
+#' to other solutions in the population, encouraging exploration of diverse regions.
+#'
+#' @examples
+#' \dontrun
+#' # Create example data
+#' patient_df <- data.frame(
+#'   patient_id = 1:100,
+#'   outcome = rbinom(100, 1, 0.3)
+#' )
+#' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+#'
+#' # Define tree structure
+#' tree_depth <- c(1, rep(2, 5), rep(3, 15))
+#'
+#' # Run GA
+#' results <- run_genetic_algorithm(
+#'   patient_data = patient_df,
+#'   node_column = "drugs",
+#'   target_column = "outcome",
+#'   tree_depth = tree_depth,
+#'   population_size = 50,
+#'   epochs = 500,
+#'   score_type = "hypergeometric",
+#'   verbose = TRUE
+#' )
+#'
+#' # View top results
+#' print(results$top_scores)
+#' print(results$top_solutions)
+#' }
+#'
+#' @export
+#' @seealso \code{\link{run_mcmc}} for an MCMC-based optimization approach
+run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
+    .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+}
+
