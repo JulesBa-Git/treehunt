@@ -39,6 +39,9 @@ double GeneticAlgorithm<TargetType>::compute_score(const Solution& sol) const{
   
   case ScoreType::RELATIVE_RISK :
     return ScoreFunctions<TargetType>::compute_relative_risk(data_, sol);
+    
+  case ScoreType::WILCOXON : 
+    return ScoreFunctions<TargetType>::compute_wilcoxon_risk(data_, sol);
   
   default :
     Rcpp::stop("Unknown score type");

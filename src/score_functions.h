@@ -9,7 +9,8 @@
 
 enum class ScoreType{
   HYPERGEOMETRIC,
-  RELATIVE_RISK
+  RELATIVE_RISK,
+  WILCOXON
 };
 
 template<typename TargetType>
@@ -215,6 +216,77 @@ public:
   static double compute_relative_risk(const PatientData<TargetType>& data,
                                       const Solution& solution) {
     return compute_relative_risk_with_data(data, solution).score;
+  }
+  
+  static ScoreData compute_wilcoxon_risk_with_data(const PatientData<TargetType>& data,
+                                                   const Solution& solution){
+    //TODO : continuity correction ? permutation statistics ?
+    ScoreData result;
+    result.covered_patients = 0;
+    result.covered_nonzero_target = 0;
+    double noncovered = 0;
+    const auto& nodes = solution.get_nodes();
+    
+    //vector of pair <value, group>
+    std::vector<std::pair<double,int>> combined_vec;
+    // We consider 1% of data will be considered as a baseline
+    combined_vec.reserve(data.size()); 
+    
+    for(size_t i = 0; i < data.size(); ++i){
+      bool patient_have_solution = data.patient_has_combination(i, nodes);
+      
+      if(patient_have_solution){
+        ++result.covered_patients;
+        
+        combined_vec.emplace_back(std::make_pair(data.get_target(i), 2));
+      }else{
+        ++noncovered;
+        combined_vec.emplace_back(std::make_pair(data.get_target(i), 1));
+      }
+    }
+    
+    if (result.covered_patients == 0 || noncovered < 1){
+      result.score = 0.0;
+      return result;
+    }
+    
+    std::sort(combined_vec.begin(), combined_vec.end(), 
+              [](const std::pair<double, int>& p1, const std::pair<double, int>& p2){
+                return p1.first < p2.first;
+              });
+    
+    double rank_sum1 = 0;
+    for(size_t i = 0 ; i < combined_vec.size(); ++i){
+      if(combined_vec[i].second == 1)
+        rank_sum1 += (i+1); 
+    }
+    
+    double U_1 = rank_sum1 - (noncovered * (noncovered + 1) / 2.0);
+    double mu_u = (static_cast<double>(noncovered * result.covered_patients)) / 2.0;
+    double var_u = (static_cast<double>(noncovered * result.covered_patients *
+                    (noncovered + result.covered_patients + 1))) / 2.0;
+    
+    if(var_u <= 0){
+      result.score = 0.0;
+      return result;
+    }
+    
+    double sigma_u = std::sqrt(var_u);
+    // Continuity correction since covered will probably be small
+    double diff = U_1 - mu_u;
+    double corrected_diff = diff > 0 ? diff - 0.5 : diff + 0.5;
+    
+    double Z = corrected_diff / sigma_u;
+    
+    double log_p= R::pnorm(Z, 0.0, 1.0, true, true);
+    
+    result.score = -log_p;
+    return result;
+  }
+  
+  static double compute_wilcoxon_risk(const PatientData<TargetType>& data,
+                                                   const Solution& solution){
+    return compute_wilcoxon_risk_with_data(data, solution).score;
   }
 };
 #endif

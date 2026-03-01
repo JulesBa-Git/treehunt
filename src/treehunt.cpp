@@ -45,9 +45,12 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   } else if (score_type_str == "relative_risk" || score_type_str == "RELATIVE_RISK" ||
     score_type_str == "rr" || score_type_str == "RR") {
     return ScoreType::RELATIVE_RISK;
-  } else {
+  } else if (score_type_str == "Wilcoxon" || score_type_str == "WILCOXON" ||
+    score_type_str == "wilcoxon" || score_type_str == "wilc") {
+    return ScoreType::WILCOXON;
+  }else {
     Rcpp::stop("Unknown score type: '" + score_type_str + 
-      "'. Use 'hypergeometric' or 'relative_risk'.");
+      "'. Use one of 'hypergeometric', 'relative_risk', 'wilcoxon'.");
   }
 }
 
@@ -88,7 +91,8 @@ ScoreType parse_score_type(const std::string& score_type_str) {
 //' @param max_score Maximum score value for binning in the score distribution.
 //'   Scores above this are tracked separately. Default: 200.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
-//'   hypergeometric test or "relative_risk" for relative risk calculation.
+//'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+//'   for the wilcoxon test with continuous output.
 //'   Default: "hypergeometric".
 //' @param verbose If TRUE, prints progress and statistics during the run.
 //'   Default: FALSE.
@@ -293,8 +297,8 @@ Rcpp::List run_mcmc(
 //' @param alpha Parameter controlling the add/remove mutation bias. Higher values
 //'   favor adding nodes. Default: 1.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
-//'   hypergeometric test or "relative_risk" for relative risk calculation.
-//'   Default: "hypergeometric".
+ //'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+ //'   for the wilcoxon test with continuous output.
 //' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 //'   of different solutions. Default: FALSE.
 //' @param verbose If TRUE, prints progress during the run. Default: FALSE.

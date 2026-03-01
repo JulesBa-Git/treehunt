@@ -161,6 +161,42 @@
     .Call(`_treehunt_test_tree_info`, ptr)
 }
 
+#' Run Genetic Algorithm for High Score Nodes Combination Search
+#'
+#' Performs a genetic algorithm search to find optimal node combinations that
+#' maximize a specified score function. The algorithm evolves a population of
+#' solutions through selection, crossover, and mutation operations.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing node indexes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree_depth An integer vector specifying the depth of each node in the
+#'   tree structure. Must start at depth 1 and children must be at depth+1 of
+#'   their parent.
+#' @param population_size Number of solutions in the population. Default: 100.
+#' @param epochs Number of generations to evolve. Default: 1000.
+#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+#' @param prob_mutation_type1 When mutation occurs, probability of using Type 1
+#'   (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+#' @param crossover_rate Probability of applying crossover to selected parents.
+#'   Default: 0.8.
+#' @param elite_count Number of top solutions to preserve unchanged each generation.
+#'   Default: 0.
+#' @param tournament_size Number of solutions competing in tournament selection.
+#'   Default: 2.
+#' @param alpha Parameter controlling the add/remove mutation bias. Higher values
+#'   favor adding nodes. Default: 1.0.
+#' @param score_type Scoring function to use. Either "hypergeometric" for the
+NULL
+
 #' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
 #' Tree
 #'
@@ -195,7 +231,8 @@
 #' @param max_score Maximum score value for binning in the score distribution.
 #'   Scores above this are tracked separately. Default: 200.0.
 #' @param score_type Scoring function to use. Either "hypergeometric" for the
-#'   hypergeometric test or "relative_risk" for relative risk calculation.
+#'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+#'   for the wilcoxon test with continuous output.
 #'   Default: "hypergeometric".
 #' @param verbose If TRUE, prints progress and statistics during the run.
 #'   Default: FALSE.
@@ -266,42 +303,6 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
     .Call(`_treehunt_run_mcmc`, patient_data, node_column, target_column, tree_depth, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
 }
 
-#' Run Genetic Algorithm for High Score Nodes Combination Search
-#'
-#' Performs a genetic algorithm search to find optimal node combinations that
-#' maximize a specified score function. The algorithm evolves a population of
-#' solutions through selection, crossover, and mutation operations.
-#'
-#' @param patient_data A data.frame containing patient information with at least
-#'   a node column and a target column.
-#' @param node_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the column containing node indexes. This column should be either:
-#'   \itemize{
-#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
-#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
-#'   }
-#' @param target_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the target/outcome column. Integer values are treated as binary,
-#'   numeric values with non-0/1 entries are treated as continuous.
-#' @param tree_depth An integer vector specifying the depth of each node in the
-#'   tree structure. Must start at depth 1 and children must be at depth+1 of
-#'   their parent.
-#' @param population_size Number of solutions in the population. Default: 100.
-#' @param epochs Number of generations to evolve. Default: 1000.
-#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
-#' @param prob_mutation_type1 When mutation occurs, probability of using Type 1
-#'   (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
-#' @param crossover_rate Probability of applying crossover to selected parents.
-#'   Default: 0.8.
-#' @param elite_count Number of top solutions to preserve unchanged each generation.
-#'   Default: 0.
-#' @param tournament_size Number of solutions competing in tournament selection.
-#'   Default: 2.
-#' @param alpha Parameter controlling the add/remove mutation bias. Higher values
-#'   favor adding nodes. Default: 1.0.
-#' @param score_type Scoring function to use. Either "hypergeometric" for the
-#'   hypergeometric test or "relative_risk" for relative risk calculation.
-#'   Default: "hypergeometric".
 #' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 #'   of different solutions. Default: FALSE.
 #' @param verbose If TRUE, prints progress during the run. Default: FALSE.
