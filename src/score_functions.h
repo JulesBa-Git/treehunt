@@ -219,7 +219,8 @@ public:
   }
   
   static ScoreData compute_wilcoxon_risk_with_data(const PatientData<TargetType>& data,
-                                                   const Solution& solution){
+                                                   const Solution& solution,
+                                                   bool parallel = true){
     //TODO : continuity correction ? permutation statistics ?
     ScoreData result;
     result.covered_patients = 0;
@@ -228,22 +229,27 @@ public:
     const auto& nodes = solution.get_nodes();
     
     //vector of pair <value, group>
-    std::vector<std::pair<double,int>> combined_vec;
-    // We consider 1% of data will be considered as a baseline
-    combined_vec.reserve(data.size()); 
+    std::vector<std::pair<double,int>> combined_vec(data.size());
     
+    bool use_parallel = parallel && data.size() > 1000;
+    double tmp_covered = 0;
+    
+#ifdef _OPENMP
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered, noncovered)
+#endif
     for(size_t i = 0; i < data.size(); ++i){
       bool patient_have_solution = data.patient_has_combination(i, nodes);
       
       if(patient_have_solution){
-        ++result.covered_patients;
-        
-        combined_vec.emplace_back(std::make_pair(data.get_target(i), 2));
+        ++tmp_covered;
+        combined_vec[i] = {data.get_target(i), 2};
       }else{
         ++noncovered;
-        combined_vec.emplace_back(std::make_pair(data.get_target(i), 1));
+        combined_vec[i] = {data.get_target(i), 1};
       }
     }
+    
+    result.covered_patients = tmp_covered;
     
     if (result.covered_patients == 0 || noncovered < 1){
       result.score = 0.0;
@@ -285,7 +291,8 @@ public:
   }
   
   static double compute_wilcoxon_risk(const PatientData<TargetType>& data,
-                                                   const Solution& solution){
+                                                   const Solution& solution,
+                                                   bool parallel = true){
     return compute_wilcoxon_risk_with_data(data, solution).score;
   }
 };
