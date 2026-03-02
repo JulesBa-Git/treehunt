@@ -108,6 +108,7 @@ void tree_structure::compute_father(){
       father.push_back(current_father[depth_[i] - 1]);
       current_father[depth_[i]] = i;
     }
+    father_ = std::move(father);
     has_father_ = true;
   }
 }

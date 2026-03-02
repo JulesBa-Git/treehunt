@@ -464,3 +464,180 @@ Rcpp::List run_genetic_algorithm(
    Rcpp::Named("statistics") = statistics
  );
 }
+
+
+//' Run Genetic Algorithm for High Score Nodes Combination Search
+ //'
+ //' Performs a genetic algorithm search to find optimal node combinations that
+ //' maximize a specified score function. This version builds the internal tree 
+ //' structure from a provided data frame mapping node depths and bounds.
+ //'
+ //' @param patient_data A data.frame containing patient information.
+ //' @param node_column Either a string (column name) or integer (1-based index)
+ //'   specifying the column containing node indexes (list of vectors or comma-separated strings).
+ //' @param target_column Either a string (column name) or integer (1-based index)
+ //'   specifying the target/outcome column.
+ //' @param tree A data.frame containing the structural definition of the tree.
+ //' @param depth_column Either a string or integer specifying the column in 
+ //'   \code{tree} that contains the node depth levels.
+ //' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+ //'  specifying the column in \code{tree_depth} that contains upper 
+ //'  bound of nodes. Defaults to \code{NULL}.
+ //' @param name_column (Optional) Either a string or integer (1-based index) 
+ //'  specifying the column in \code{tree} that contains the corresponding name
+ //'  of nodes. Defaults to \code{NULL}.
+ //' @param population_size Number of solutions in the population. Default: 100.
+ //' @param epochs Number of generations to evolve. Default: 1000.
+ //' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+ //' @param prob_mutation_type1 Probability of using Type 1 (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+ //' @param crossover_rate Probability of applying crossover to selected parents. Default: 0.8.
+ //' @param elite_count Number of top solutions to preserve unchanged each generation. Default: 0.
+ //' @param tournament_size Number of solutions competing in tournament selection. Default: 3.
+ //' @param alpha Parameter controlling add/remove mutation bias. Higher values favor adding nodes. Default: 1.0.
+ //' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
+ //' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
+ //' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+ //'
+ //' @return A list containing:
+ //'   \describe{
+ //'     \item{final_population}{The complete final population of solutions}
+ //'     \item{final_scores}{Scores for all solutions in the final population}
+ //'     \item{parameters}{List of parameters used for the run}
+ //'     \item{statistics}{Additional information about cache hits, etc.}
+ //'   }
+ //'
+ //' @details
+ //' Unlike the vector-based version, this function extracts tree hierarchy from 
+ //' the \code{tree_depth} data frame. It uses \code{depth_column} and optionally 
+ //' \code{upper_bound_column} and \code{name_column} to define the tree.
+ //'
+ //' @examples
+ //' \dontrun{
+ //' # Define tree structure via data frame
+ //' tree_df <- data.frame(
+ //'   node_id = 1:21,
+ //'   depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
+ //'   # and name column
+ //' )
+ //'
+ //' results <- run_genetic_algorithm_df_tree(
+ //'   patient_data = patient_df,
+ //'   node_column = "drugs",
+ //'   target_column = "outcome",
+ //'   tree = tree_df,
+ //'   depth_column = "depth_level", # or 2
+ //'   population_size = 100,
+ //'   score_type = "hypergeometric"
+ //' )
+ //' }
+ //'
+ //' @export
+ // [[Rcpp::export]]
+Rcpp::List run_genetic_algorithm_df_tree(
+   Rcpp::DataFrame patient_data,
+   SEXP node_column,
+   SEXP target_column,
+   Rcpp::DataFrame tree,
+   SEXP depth_column,
+   SEXP upper_bound_column = R_NilValue,
+   SEXP name_column = R_NilValue,
+   size_t population_size = 100,
+   size_t epochs = 1000,
+   double mutation_rate = 0.1,
+   double prob_mutation_type1 = 0.2,
+   double crossover_rate = 0.8,
+   size_t elite_count = 0,
+   size_t tournament_size = 3,
+   double alpha = 1.0,
+   std::string score_type = "hypergeometric",
+   bool diversity = false,
+   bool verbose = false) {
+ 
+ // Validate inputs
+ if (patient_data.nrows() == 0) {
+   Rcpp::stop("patient_data cannot be empty");
+ }
+ if (tree.nrow() == 0) {
+   Rcpp::stop("tree cannot be empty");
+ }
+ if (population_size < 2) {
+   Rcpp::stop("population_size must be at least 2");
+ }
+ if (epochs <= 0) {
+   Rcpp::stop("epochs must be positive");
+ }
+ if (mutation_rate < 0 || mutation_rate > 1) {
+   Rcpp::stop("mutation_rate must be between 0 and 1");
+ }
+ if (crossover_rate < 0 || crossover_rate > 1) {
+   Rcpp::stop("crossover_rate must be between 0 and 1");
+ }
+ if (elite_count >= population_size || elite_count < 0 ) {
+   Rcpp::stop("elite_count must be positive and less than population_size");
+ }
+ if (tournament_size < 1 || tournament_size > population_size) {
+   Rcpp::stop("tournament_size must be between 1 and population_size");
+ }
+ 
+ // Build tree structure
+ tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
+ 
+ // Setup GA parameters
+ GAParams params;
+ params.population_size = population_size;
+ params.epochs = epochs;
+ params.mutation_rate = mutation_rate;
+ params.prob_mutation_type1 = prob_mutation_type1;
+ params.crossover_rate = crossover_rate;
+ params.elite_count = elite_count;
+ params.tournament_size = tournament_size;
+ params.alpha = alpha;
+ params.score_type = parse_score_type(score_type);
+ params.diversity = diversity;
+ params.verbose = verbose;
+
+ // Detect target type and run appropriate template
+ TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
+ GAResults results;
+
+ if (target_type == TargetTypeDetected::BINARY) {
+   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   GeneticAlgorithm<int> algorithm(data, params);
+   results = algorithm.run();
+ } else {
+   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   GeneticAlgorithm<double> algorithm(data, params);
+   results = algorithm.run();
+ }
+ std::cout << " Run done initialized\n";
+ // Convert final_population to R list
+ Rcpp::List final_population_list(results.final_population.size());
+ for (size_t i = 0; i < results.final_population.size(); ++i) {
+   final_population_list[i] = Rcpp::wrap(results.final_population[i]);
+ }
+ 
+ Rcpp::List parameters = Rcpp::List::create(
+   Rcpp::Named("population_size") = population_size,
+   Rcpp::Named("epochs") = epochs,
+   Rcpp::Named("mutation_rate") = mutation_rate,
+   Rcpp::Named("prob_mutation_type1") = prob_mutation_type1,
+   Rcpp::Named("crossover_rate") = crossover_rate,
+   Rcpp::Named("elite_count") = elite_count,
+   Rcpp::Named("tournament_size") = tournament_size,
+   Rcpp::Named("alpha") = alpha,
+   Rcpp::Named("score_type") = score_type,
+   Rcpp::Named("diversity") = diversity
+ );
+ 
+ Rcpp::List statistics = Rcpp::List::create(
+   Rcpp::Named("total_generations") = results.total_generations,
+   Rcpp::Named("cache_hits") = results.cache_hits
+ );
+ 
+ return Rcpp::List::create(
+   Rcpp::Named("final_population") = final_population_list,
+   Rcpp::Named("final_scores") = Rcpp::wrap(results.final_scores),
+   Rcpp::Named("parameters") = parameters,
+   Rcpp::Named("statistics") = statistics
+ );
+} 

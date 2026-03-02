@@ -68,12 +68,13 @@ void GeneticAlgorithm<TargetType>::evaluate(){
 template<typename TargetType>
 void GeneticAlgorithm<TargetType>::penalize(){
   auto [M, index] = data_.dissimilarity_input_computation();
+  
   std::vector<std::vector<double>> 
     similarity(population_.size(), std::vector<double>(population_.size(), -1.0));
-  
-  for(size_t i = 0; i < index.size() -1 ; ++i){
+
+  for(size_t i = 0; i < population_.size() -1 ; ++i){
     similarity[i][i] = 1;
-    for(size_t j = i+1; j < index.size(); ++j){
+    for(size_t j = i+1; j < population_.size(); ++j){
       
       if(similarity[i][j] < 0){
         double i_j_similarity = 1.0 -
@@ -84,6 +85,7 @@ void GeneticAlgorithm<TargetType>::penalize(){
       }
     }
   }
+  similarity[population_.size()-1][population_.size()-1] = 1;
   
   for(size_t i = 0 ; i < population_.size(); ++i){
     //Accumulation starts at -1 because the similarity with himself is 1
@@ -195,15 +197,16 @@ GAResults GeneticAlgorithm<TargetType>::extract_results() const {
 template<typename TargetType>
 GAResults GeneticAlgorithm<TargetType>::run(){
   initialize();
-  
+
   std::vector<Solution> offspring;
   offspring.reserve(population_.size());
-  
+
   for(size_t i = 0 ; i < params_.epochs; ++i){
     evaluate();
     
     if(params_.diversity)
       penalize();
+      
     
     if(params_.verbose && (i % 10 == 0 || i == params_.epochs - 1)){
       // Find current best

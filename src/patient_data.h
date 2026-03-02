@@ -79,15 +79,18 @@ public:
     dissimilarity_input_computation() const {
       std::vector<std::vector<int>> M;
       std::vector<int> index;
+
       const auto& father = tree_.get_father();
       const auto& depth = tree_.get_depth();
       
       int node_count = 0;
+    
       for(const auto& nodes : patient_nodes_){
         node_count+= nodes.size();
       }
       index.reserve(patient_nodes_.size());
       M.resize(node_count);
+    
       for(size_t i = 0; i < M.size(); ++i)
         M[i].reserve(tree_.max_depth() + 1);
       
@@ -103,16 +106,16 @@ public:
           }
           int current_father = father[node];
           //add the father of this node
-          while(depth[current_father] != 1){
+          while(depth[current_father] >= 1){
             M[row].push_back(current_father);
             current_father = father[current_father];
           }// push the father of depth 1
-          M[row].push_back(current_father);
+          M[row++].push_back(current_father);
         }
         index.push_back(current_patient_node_index);
         current_patient_node_index += nodes_vector.size();
       }
-      
+
       return std::make_pair(std::move(M), std::move(index));
     }
 };

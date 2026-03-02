@@ -197,6 +197,9 @@
 #' @param score_type Scoring function to use. Either "hypergeometric" for the
 NULL
 
+#' Run Genetic Algorithm for High Score Nodes Combination Search
+NULL
+
 #' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
 #' Tree
 #'
@@ -364,5 +367,9 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
 #' @seealso \code{\link{run_mcmc}} for an MCMC-based optimization approach
 run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
     .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+}
+
+run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
+    .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 

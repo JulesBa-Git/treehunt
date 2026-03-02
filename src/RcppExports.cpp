@@ -438,6 +438,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// run_genetic_algorithm_df_tree
+Rcpp::List run_genetic_algorithm_df_tree(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, size_t population_size, size_t epochs, double mutation_rate, double prob_mutation_type1, double crossover_rate, size_t elite_count, size_t tournament_size, double alpha, std::string score_type, bool diversity, bool verbose);
+RcppExport SEXP _treehunt_run_genetic_algorithm_df_tree(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP population_sizeSEXP, SEXP epochsSEXP, SEXP mutation_rateSEXP, SEXP prob_mutation_type1SEXP, SEXP crossover_rateSEXP, SEXP elite_countSEXP, SEXP tournament_sizeSEXP, SEXP alphaSEXP, SEXP score_typeSEXP, SEXP diversitySEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< size_t >::type population_size(population_sizeSEXP);
+    Rcpp::traits::input_parameter< size_t >::type epochs(epochsSEXP);
+    Rcpp::traits::input_parameter< double >::type mutation_rate(mutation_rateSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_mutation_type1(prob_mutation_type1SEXP);
+    Rcpp::traits::input_parameter< double >::type crossover_rate(crossover_rateSEXP);
+    Rcpp::traits::input_parameter< size_t >::type elite_count(elite_countSEXP);
+    Rcpp::traits::input_parameter< size_t >::type tournament_size(tournament_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< std::string >::type score_type(score_typeSEXP);
+    Rcpp::traits::input_parameter< bool >::type diversity(diversitySEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_genetic_algorithm_df_tree(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_create_patient_data_int", (DL_FUNC) &_treehunt_test_create_patient_data_int, 4},
@@ -474,6 +502,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_tree_info", (DL_FUNC) &_treehunt_test_tree_info, 1},
     {"_treehunt_run_mcmc", (DL_FUNC) &_treehunt_run_mcmc, 13},
     {"_treehunt_run_genetic_algorithm", (DL_FUNC) &_treehunt_run_genetic_algorithm, 15},
+    {"_treehunt_run_genetic_algorithm_df_tree", (DL_FUNC) &_treehunt_run_genetic_algorithm_df_tree, 18},
     {NULL, NULL, 0}
 };
 
