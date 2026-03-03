@@ -23,9 +23,12 @@ void GeneticAlgorithm<TargetType>::initialize(){
   std::poisson_distribution<int> solution_size(data_.mean_patient_nodes());
   
   for(size_t i = 0; i < params_.population_size; ++i){
+    int solution_length = solution_size(rng_);
+    if (solution_length == 0)
+      solution_length = 1;
     population_.emplace_back(Solution::create_random_valid(data_.get_tree(), 
                                                  rng_,
-                                                 solution_size(rng_)));
+                                                 solution_length));
   }
   population_.shrink_to_fit();
   assert(population_.size() == params_.population_size);
