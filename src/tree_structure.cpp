@@ -1,7 +1,9 @@
 #include "tree_structure.h"
 
 tree_structure::tree_structure(const Rcpp::DataFrame &Tree, SEXP depth,
-                               SEXP upper_bound, SEXP name) {
+                               SEXP upper_bound, SEXP name) : depth_{},
+upper_bound_{}, name_{}, father_{}, has_father_{false},has_name_{false},
+                               max_depth_{}{
 
   depth_ =
       Rcpp::as<std::vector<int>>(get_column<Rcpp::IntegerVector>(Tree, depth));
