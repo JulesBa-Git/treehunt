@@ -4,6 +4,7 @@
 #include <numeric>
 #include <vector>
 #include <unordered_set>
+#include <algorithm>
 
 double normalized_distance(size_t i, size_t j,
                            const std::vector<std::vector<int>>& M,
