@@ -12,7 +12,7 @@ Description: Implements hybrid evolutionary Markov Chain Monte Carlo (MCMC) and
     to any tree hierarchy and optimization metric. Efficient C++ implementation 
     via 'Rcpp' enables exploration of large combinatorial spaces.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.1.0)
+Imports: Rcpp (>= 1.1.0), jsonlite
 LinkingTo: Rcpp
 Encoding: UTF-8
 RoxygenNote: 7.3.2
