@@ -270,7 +270,7 @@ public:
     double U_1 = rank_sum1 - (noncovered * (noncovered + 1) / 2.0);
     double mu_u = (static_cast<double>(noncovered * result.covered_patients)) / 2.0;
     double var_u = (static_cast<double>(noncovered * result.covered_patients *
-                    (noncovered + result.covered_patients + 1))) / 2.0;
+                    (noncovered + result.covered_patients + 1))) / 12.0;
     
     if(var_u <= 0){
       result.score = 0.0;
