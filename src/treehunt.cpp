@@ -283,6 +283,12 @@ Rcpp::List run_mcmc(
 //' @param tree_depth An integer vector specifying the depth of each node in the
 //'   tree structure. Must start at depth 1 and children must be at depth+1 of
 //'   their parent.
+//' @param seed_population A \code{list} of integer vectors representing an initial 
+//'   population (vector of 1-based tree index). If provided, these individuals 
+//'   will be included in the first generation . If the list contains fewer 
+//'   individuals than \code{population_size}, the remainder will be initialized 
+//'   randomly. If \code{NULL} (the default), the entire initial population 
+//'   is generated randomly.
 //' @param population_size Number of solutions in the population. Default: 100.
 //' @param epochs Number of generations to evolve. Default: 1000.
 //' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
@@ -364,6 +370,7 @@ Rcpp::List run_genetic_algorithm(
    SEXP node_column,
    SEXP target_column,
    Rcpp::IntegerVector tree_depth,
+   Rcpp::Nullable<Rcpp::List> seed_population = R_NilValue,
    size_t population_size = 100,
    size_t epochs = 1000,
    double mutation_rate = 0.1,
@@ -425,11 +432,11 @@ Rcpp::List run_genetic_algorithm(
  
  if (target_type == TargetTypeDetected::BINARY) {
    PatientData<int> data(patient_data, node_column, target_column, tree);
-   GeneticAlgorithm<int> algorithm(data, params);
+   GeneticAlgorithm<int> algorithm(data, params, seed_population);
    results = algorithm.run();
  } else {
    PatientData<double> data(patient_data, node_column, target_column, tree);
-   GeneticAlgorithm<double> algorithm(data, params);
+   GeneticAlgorithm<double> algorithm(data, params, seed_population);
    results = algorithm.run();
  }
  
@@ -486,6 +493,12 @@ Rcpp::List run_genetic_algorithm(
  //' @param name_column (Optional) Either a string or integer (1-based index) 
  //'  specifying the column in \code{tree} that contains the corresponding name
  //'  of nodes. Defaults to \code{NULL}.
+ //' @param seed_population A \code{list} of integer vectors representing an initial 
+ //'   population (vector of 1-based tree index). If provided, these individuals 
+ //'   will be included in the first generation . If the list contains fewer 
+ //'   individuals than \code{population_size}, the remainder will be initialized 
+ //'   randomly. If \code{NULL} (the default), the entire initial population 
+ //'   is generated randomly.
  //' @param population_size Number of solutions in the population. Default: 100.
  //' @param epochs Number of generations to evolve. Default: 1000.
  //' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
@@ -541,6 +554,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
    SEXP depth_column,
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
+   Rcpp::Nullable<Rcpp::List> seed_population = R_NilValue,
    size_t population_size = 100,
    size_t epochs = 1000,
    double mutation_rate = 0.1,
@@ -602,14 +616,14 @@ Rcpp::List run_genetic_algorithm_df_tree(
 
  if (target_type == TargetTypeDetected::BINARY) {
    PatientData<int> data(patient_data, node_column, target_column, cppTree);
-   GeneticAlgorithm<int> algorithm(data, params);
+   GeneticAlgorithm<int> algorithm(data, params, seed_population);
    results = algorithm.run();
  } else {
    PatientData<double> data(patient_data, node_column, target_column, cppTree);
-   GeneticAlgorithm<double> algorithm(data, params);
+   GeneticAlgorithm<double> algorithm(data, params, seed_population);
    results = algorithm.run();
  }
- std::cout << " Run done initialized\n";
+
  // Convert final_population to R list
  Rcpp::List final_population_list(results.final_population.size());
  for (size_t i = 0; i < results.final_population.size(); ++i) {

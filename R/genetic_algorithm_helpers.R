@@ -10,6 +10,7 @@
 run_ga_batch <- function(config_path, 
                          patient_data, 
                          tree_df, 
+                         seed_population = NULL,
                          replicates = 5, 
                          output_dir = "results") {
   
@@ -43,6 +44,7 @@ run_ga_batch <- function(config_path,
         depth_column        = conf$depth_column,  # Name or Index
         upper_bound_column  = if (!is.null(conf$upper_bound_column)) conf$upper_bound_column else NULL,
         name_column         = if (!is.null(conf$name_column)) conf$name_column else NULL,
+        seed_population     = seed_population, 
         population_size     = as.integer(conf$population_size),
         epochs              = as.integer(conf$epochs),
         mutation_rate       = as.numeric(conf$mutation_rate),

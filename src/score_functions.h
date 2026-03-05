@@ -82,7 +82,6 @@ public:
     
 #ifdef _OPENMP
     if (use_parallel) {
-      Rcpp::Rcout << "CPU parallelization enabled\n";
       // Parallel version with OpenMP
       size_t local_covered = 0;
       size_t local_covered_nonzero = 0;

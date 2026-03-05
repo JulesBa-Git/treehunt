@@ -72,12 +72,16 @@ bool Solution::is_valid(const tree_structure& tree) const{
   if(selected_nodes_.empty())
     return false;
   
-  // Check for duplicates
+  // Check for duplicates and wrong index
   for (size_t i = 1; i < selected_nodes_.size(); ++i) {
     if (selected_nodes_[i] == selected_nodes_[i-1]) {
       return false; 
     }
+    else if(selected_nodes_[i] < 0 || selected_nodes_[i] >= tree.get_depth().size()){
+      return false;
+    }
   }
+  
   
   const auto& upper_bound = tree.get_upper_bound();
   

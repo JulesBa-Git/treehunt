@@ -2,8 +2,9 @@
 
 template<typename TargetType>
 GeneticAlgorithm<TargetType>::GeneticAlgorithm(const PatientData<TargetType>& data,
-                                               const GAParams& params)
-  : data_{data}, params_{params}, cache_hits_{0} {
+                                               const GAParams& params,
+                                               const Rcpp::Nullable<Rcpp::List>& seed_population)
+  : population_{}, data_{data}, params_{params}, cache_hits_{0} {
     
     population_.reserve(params.population_size);
     std::random_device rd;
@@ -15,6 +16,28 @@ GeneticAlgorithm<TargetType>::GeneticAlgorithm(const PatientData<TargetType>& da
     std::seed_seq seq(seed_data.begin(), seed_data.end());
     
     rng_ = std::mt19937(seq);
+    
+    if(seed_population.isNotNull()){
+      Rcpp::List seed(seed_population);
+      if(seed.size() > params.population_size)
+        Rcpp::stop("Seed population size (%i) exceeds the total population size (%i)." 
+                     ,seed.size(), params.population_size);
+      
+      for(int i = 0; i < seed.size(); ++i){
+        std::vector<int> nodes = Rcpp::as<std::vector<int>>(seed[i]);
+        
+        // subtract 1 from every element (1-based to 0-based)
+        std::transform(nodes.begin(), nodes.end(), nodes.begin(), 
+                       [](int x) { return x - 1; });
+        
+        Solution tmp_sol(std::move(nodes));
+        
+        if(tmp_sol.is_valid(data.get_tree()))
+          population_.emplace_back(std::move(tmp_sol));
+        else
+          Rcpp::Rcout<< "Warning: Seed individual at index " << i << " is invalid and was skipped.\n";
+      }
+    }
 }
 
 template<typename TargetType>
@@ -22,7 +45,7 @@ void GeneticAlgorithm<TargetType>::initialize(){
   std::uniform_int_distribution<size_t> node(0, data_.get_tree().get_depth().size()-1);
   std::poisson_distribution<int> solution_size(data_.mean_patient_nodes());
   
-  for(size_t i = 0; i < params_.population_size; ++i){
+  for(size_t i = population_.size(); i < params_.population_size; ++i){
     int solution_length = solution_size(rng_);
     if (solution_length == 0)
       solution_length = 1;
@@ -202,7 +225,7 @@ GAResults GeneticAlgorithm<TargetType>::run(){
   initialize();
 
   std::vector<Solution> offspring;
-  offspring.reserve(population_.size());
+  offspring.reserve(params_.population_size);
 
   for(size_t i = 0 ; i < params_.epochs; ++i){
     evaluate();

@@ -50,7 +50,8 @@ private:
 public :
   GeneticAlgorithm() = delete;
   GeneticAlgorithm(const PatientData<TargetType>& data,
-                   const GAParams& params);
+                   const GAParams& params, 
+                   const Rcpp::Nullable<Rcpp::List>& seed_population = R_NilValue);
   
   void initialize();
   

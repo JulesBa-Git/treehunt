@@ -181,6 +181,12 @@
 #' @param tree_depth An integer vector specifying the depth of each node in the
 #'   tree structure. Must start at depth 1 and children must be at depth+1 of
 #'   their parent.
+#' @param seed_population A \code{list} of integer vectors representing an initial 
+#'   population (vector of 1-based tree index). If provided, these individuals 
+#'   will be included in the first generation . If the list contains fewer 
+#'   individuals than \code{population_size}, the remainder will be initialized 
+#'   randomly. If \code{NULL} (the default), the entire initial population 
+#'   is generated randomly.
 #' @param population_size Number of solutions in the population. Default: 100.
 #' @param epochs Number of generations to evolve. Default: 1000.
 #' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
@@ -365,11 +371,11 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
 #'
 #' @export
 #' @seealso \code{\link{run_mcmc}} for an MCMC-based optimization approach
-run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
-    .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
+    .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 
-run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
-    .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
+    .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 
