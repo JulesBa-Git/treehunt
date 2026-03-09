@@ -203,9 +203,6 @@
 #' @param score_type Scoring function to use. Either "hypergeometric" for the
 NULL
 
-#' Run Genetic Algorithm for High Score Nodes Combination Search
-NULL
-
 #' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
 #' Tree
 #'
@@ -375,7 +372,85 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
     .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 
+#' Run Genetic Algorithm for High Score Nodes Combination Search
+#'
+#' Performs a genetic algorithm search to find optimal node combinations that
+#' maximize a specified score function. This version builds the internal tree 
+#' structure from a provided data frame mapping node depths and bounds.
+#'
+#' @param patient_data A data.frame containing patient information.
+#' @param node_column Either a string (column name) or integer (1-based index)
+#'   specifying the column containing node indexes (list of vectors or comma-separated strings).
+#' @param target_column Either a string (column name) or integer (1-based index)
+#'   specifying the target/outcome column.
+#' @param tree A data.frame containing the structural definition of the tree.
+#' @param depth_column Either a string or integer specifying the column in 
+#'   \code{tree} that contains the node depth levels.
+#' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree_depth} that contains upper 
+#'  bound of nodes. Defaults to \code{NULL}.
+#' @param name_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree} that contains the corresponding name
+#'  of nodes. Defaults to \code{NULL}.
+#' @param seed_population A \code{list} of integer vectors representing an initial 
+#'   population (vector of 1-based tree index). If provided, these individuals 
+#'   will be included in the first generation . If the list contains fewer 
+#'   individuals than \code{population_size}, the remainder will be initialized 
+#'   randomly. If \code{NULL} (the default), the entire initial population 
+#'   is generated randomly.
+#' @param population_size Number of solutions in the population. Default: 100.
+#' @param epochs Number of generations to evolve. Default: 1000.
+#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+#' @param prob_mutation_type1 Probability of using Type 1 (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+#' @param crossover_rate Probability of applying crossover to selected parents. Default: 0.8.
+#' @param elite_count Number of top solutions to preserve unchanged each generation. Default: 0.
+#' @param tournament_size Number of solutions competing in tournament selection. Default: 3.
+#' @param alpha Parameter controlling add/remove mutation bias. Higher values favor adding nodes. Default: 1.0.
+#' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
+#' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
+#' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+#'
+#' @return A list containing:
+#'   \describe{
+#'     \item{final_population}{The complete final population of solutions}
+#'     \item{final_scores}{Scores for all solutions in the final population}
+#'     \item{parameters}{List of parameters used for the run}
+#'     \item{statistics}{Additional information about cache hits, etc.}
+#'   }
+#'
+#' @details
+#' Unlike the vector-based version, this function extracts tree hierarchy from 
+#' the \code{tree_depth} data frame. It uses \code{depth_column} and optionally 
+#' \code{upper_bound_column} and \code{name_column} to define the tree.
+#'
+#' @examples
+#' \dontrun{
+#' # Define tree structure via data frame
+#' tree_df <- data.frame(
+#'   node_id = 1:21,
+#'   depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
+#'   # and name column
+#' )
+#'
+#' results <- run_genetic_algorithm_df_tree(
+#'   patient_data = patient_df,
+#'   node_column = "drugs",
+#'   target_column = "outcome",
+#'   tree = tree_df,
+#'   depth_column = "depth_level", # or 2
+#'   population_size = 100,
+#'   score_type = "hypergeometric"
+#' )
+#' }
+#'
+#' @export
 run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
     .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+}
+
+#' Compute score on a list of cocktails
+#' @export
+compute_score <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, score_type = "hypergeometric") {
+    .Call(`_treehunt_compute_score`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type)
 }
 

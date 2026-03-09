@@ -474,78 +474,78 @@ Rcpp::List run_genetic_algorithm(
 
 
 //' Run Genetic Algorithm for High Score Nodes Combination Search
- //'
- //' Performs a genetic algorithm search to find optimal node combinations that
- //' maximize a specified score function. This version builds the internal tree 
- //' structure from a provided data frame mapping node depths and bounds.
- //'
- //' @param patient_data A data.frame containing patient information.
- //' @param node_column Either a string (column name) or integer (1-based index)
- //'   specifying the column containing node indexes (list of vectors or comma-separated strings).
- //' @param target_column Either a string (column name) or integer (1-based index)
- //'   specifying the target/outcome column.
- //' @param tree A data.frame containing the structural definition of the tree.
- //' @param depth_column Either a string or integer specifying the column in 
- //'   \code{tree} that contains the node depth levels.
- //' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
- //'  specifying the column in \code{tree_depth} that contains upper 
- //'  bound of nodes. Defaults to \code{NULL}.
- //' @param name_column (Optional) Either a string or integer (1-based index) 
- //'  specifying the column in \code{tree} that contains the corresponding name
- //'  of nodes. Defaults to \code{NULL}.
- //' @param seed_population A \code{list} of integer vectors representing an initial 
- //'   population (vector of 1-based tree index). If provided, these individuals 
- //'   will be included in the first generation . If the list contains fewer 
- //'   individuals than \code{population_size}, the remainder will be initialized 
- //'   randomly. If \code{NULL} (the default), the entire initial population 
- //'   is generated randomly.
- //' @param population_size Number of solutions in the population. Default: 100.
- //' @param epochs Number of generations to evolve. Default: 1000.
- //' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
- //' @param prob_mutation_type1 Probability of using Type 1 (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
- //' @param crossover_rate Probability of applying crossover to selected parents. Default: 0.8.
- //' @param elite_count Number of top solutions to preserve unchanged each generation. Default: 0.
- //' @param tournament_size Number of solutions competing in tournament selection. Default: 3.
- //' @param alpha Parameter controlling add/remove mutation bias. Higher values favor adding nodes. Default: 1.0.
- //' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
- //' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
- //' @param verbose If TRUE, prints progress during the run. Default: FALSE.
- //'
- //' @return A list containing:
- //'   \describe{
- //'     \item{final_population}{The complete final population of solutions}
- //'     \item{final_scores}{Scores for all solutions in the final population}
- //'     \item{parameters}{List of parameters used for the run}
- //'     \item{statistics}{Additional information about cache hits, etc.}
- //'   }
- //'
- //' @details
- //' Unlike the vector-based version, this function extracts tree hierarchy from 
- //' the \code{tree_depth} data frame. It uses \code{depth_column} and optionally 
- //' \code{upper_bound_column} and \code{name_column} to define the tree.
- //'
- //' @examples
- //' \dontrun{
- //' # Define tree structure via data frame
- //' tree_df <- data.frame(
- //'   node_id = 1:21,
- //'   depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
- //'   # and name column
- //' )
- //'
- //' results <- run_genetic_algorithm_df_tree(
- //'   patient_data = patient_df,
- //'   node_column = "drugs",
- //'   target_column = "outcome",
- //'   tree = tree_df,
- //'   depth_column = "depth_level", # or 2
- //'   population_size = 100,
- //'   score_type = "hypergeometric"
- //' )
- //' }
- //'
- //' @export
- // [[Rcpp::export]]
+//'
+//' Performs a genetic algorithm search to find optimal node combinations that
+//' maximize a specified score function. This version builds the internal tree 
+//' structure from a provided data frame mapping node depths and bounds.
+//'
+//' @param patient_data A data.frame containing patient information.
+//' @param node_column Either a string (column name) or integer (1-based index)
+//'   specifying the column containing node indexes (list of vectors or comma-separated strings).
+//' @param target_column Either a string (column name) or integer (1-based index)
+//'   specifying the target/outcome column.
+//' @param tree A data.frame containing the structural definition of the tree.
+//' @param depth_column Either a string or integer specifying the column in 
+//'   \code{tree} that contains the node depth levels.
+//' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+//'  specifying the column in \code{tree_depth} that contains upper 
+//'  bound of nodes. Defaults to \code{NULL}.
+//' @param name_column (Optional) Either a string or integer (1-based index) 
+//'  specifying the column in \code{tree} that contains the corresponding name
+//'  of nodes. Defaults to \code{NULL}.
+//' @param seed_population A \code{list} of integer vectors representing an initial 
+//'   population (vector of 1-based tree index). If provided, these individuals 
+//'   will be included in the first generation . If the list contains fewer 
+//'   individuals than \code{population_size}, the remainder will be initialized 
+//'   randomly. If \code{NULL} (the default), the entire initial population 
+//'   is generated randomly.
+//' @param population_size Number of solutions in the population. Default: 100.
+//' @param epochs Number of generations to evolve. Default: 1000.
+//' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+//' @param prob_mutation_type1 Probability of using Type 1 (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+//' @param crossover_rate Probability of applying crossover to selected parents. Default: 0.8.
+//' @param elite_count Number of top solutions to preserve unchanged each generation. Default: 0.
+//' @param tournament_size Number of solutions competing in tournament selection. Default: 3.
+//' @param alpha Parameter controlling add/remove mutation bias. Higher values favor adding nodes. Default: 1.0.
+//' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
+//' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
+//' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+//'
+//' @return A list containing:
+//'   \describe{
+//'     \item{final_population}{The complete final population of solutions}
+//'     \item{final_scores}{Scores for all solutions in the final population}
+//'     \item{parameters}{List of parameters used for the run}
+//'     \item{statistics}{Additional information about cache hits, etc.}
+//'   }
+//'
+//' @details
+//' Unlike the vector-based version, this function extracts tree hierarchy from 
+//' the \code{tree_depth} data frame. It uses \code{depth_column} and optionally 
+//' \code{upper_bound_column} and \code{name_column} to define the tree.
+//'
+//' @examples
+//' \dontrun{
+//' # Define tree structure via data frame
+//' tree_df <- data.frame(
+//'   node_id = 1:21,
+//'   depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
+//'   # and name column
+//' )
+//'
+//' results <- run_genetic_algorithm_df_tree(
+//'   patient_data = patient_df,
+//'   node_column = "drugs",
+//'   target_column = "outcome",
+//'   tree = tree_df,
+//'   depth_column = "depth_level", # or 2
+//'   population_size = 100,
+//'   score_type = "hypergeometric"
+//' )
+//' }
+//'
+//' @export
+// [[Rcpp::export]]
 Rcpp::List run_genetic_algorithm_df_tree(
    Rcpp::DataFrame patient_data,
    SEXP node_column,
@@ -655,3 +655,78 @@ Rcpp::List run_genetic_algorithm_df_tree(
    Rcpp::Named("statistics") = statistics
  );
 } 
+
+//' Compute score on a list of cocktails
+//' @export
+// [[Rcpp::export]]
+Rcpp::List compute_score(
+   Rcpp::List cocktail_list,
+   Rcpp::DataFrame patient_data,
+   SEXP node_column,
+   SEXP target_column,
+   Rcpp::DataFrame tree,
+   SEXP depth_column,
+   SEXP upper_bound_column = R_NilValue,
+   SEXP name_column = R_NilValue,
+   std::string score_type = "hypergeometric"
+){
+ tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
+ TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
+ ScoreType Cpp_score_type = parse_score_type(score_type);
+ std::vector<Solution> sols;
+ sols.reserve(cocktail_list.size());
+ 
+ std::vector<double> cocktail_scores;
+ cocktail_scores.reserve(cocktail_list.size());
+ std::vector<double> cocktail_taker;
+ cocktail_taker.reserve(cocktail_list.size());
+ 
+ for(const auto& cocktail : cocktail_list){
+   std::vector<int> nodes = Rcpp::as<std::vector<int>>(cocktail);
+   
+   // subtract 1 from every element (1-based to 0-based)
+   std::transform(nodes.begin(), nodes.end(), nodes.begin(), 
+                  [](int x) { return x - 1; });
+   
+   sols.emplace_back(std::move(nodes));
+ }
+ 
+ if (target_type == TargetTypeDetected::BINARY) {
+   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   
+   for(const auto& solution : sols){
+     ScoreFunctions<int>::ScoreData score_data;
+     switch(Cpp_score_type){
+     case ScoreType::HYPERGEOMETRIC :
+       score_data = ScoreFunctions<int>::compute_hypergeometric_with_data(data, solution);
+       
+     case ScoreType::RELATIVE_RISK :
+       score_data = ScoreFunctions<int>::compute_relative_risk_with_data(data, solution);
+       
+     default :
+       Rcpp::stop("Unknown score type");
+     }
+     cocktail_scores.push_back(score_data.score);
+     cocktail_taker.push_back(score_data.covered_patients);
+   }
+   
+ } else {
+   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   for(const auto& solution : sols){
+     ScoreFunctions<double>::ScoreData score_data;
+     switch(Cpp_score_type){
+     case ScoreType::WILCOXON :
+       score_data = ScoreFunctions<double>::compute_wilcoxon_risk_with_data(data, solution);
+     default :
+       Rcpp::stop("Wrong score type");
+     }
+     cocktail_scores.push_back(score_data.score);
+     cocktail_taker.push_back(score_data.covered_patients);
+   }
+ }
+ return Rcpp::List::create(
+   Rcpp::Named("solutions") = cocktail_list,
+   Rcpp::Named("scores") = Rcpp::wrap(cocktail_scores),
+   Rcpp::Named("number of takers") = Rcpp::wrap(cocktail_taker)
+ );
+}
