@@ -138,6 +138,9 @@ Solution Solution::mutate_swap_type2(const tree_structure& tree,
     return *this;
   }
   auto vertex = determine_vertex(tree);
+  //Handle the case where a node has no sons nor father (e.g. : Female)
+  if(vertex.size() < 1)
+    return *this;
   
   std::uniform_int_distribution<size_t> vertex_range(0, vertex.size()-1);
   size_t chosen_index = vertex_range(rng);
