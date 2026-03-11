@@ -680,6 +680,8 @@ Rcpp::List compute_score(
  cocktail_scores.reserve(cocktail_list.size());
  std::vector<double> cocktail_taker;
  cocktail_taker.reserve(cocktail_list.size());
+ std::vector<std::vector<double>> diff_QT_distribution;
+ diff_QT_distribution.reserve(cocktail_list.size());
  
  for(const auto& cocktail : cocktail_list){
    std::vector<int> nodes = Rcpp::as<std::vector<int>>(cocktail);
@@ -699,10 +701,10 @@ Rcpp::List compute_score(
      switch(Cpp_score_type){
      case ScoreType::HYPERGEOMETRIC :
        score_data = ScoreFunctions<int>::compute_hypergeometric_with_data(data, solution);
-       
+       break;
      case ScoreType::RELATIVE_RISK :
        score_data = ScoreFunctions<int>::compute_relative_risk_with_data(data, solution);
-       
+       break;
      default :
        Rcpp::stop("Unknown score type");
      }
@@ -713,20 +715,23 @@ Rcpp::List compute_score(
  } else {
    PatientData<double> data(patient_data, node_column, target_column, cppTree);
    for(const auto& solution : sols){
-     ScoreFunctions<double>::ScoreData score_data;
+     std::pair<ScoreFunctions<double>::ScoreData,std::vector<double>> score_data;
      switch(Cpp_score_type){
      case ScoreType::WILCOXON :
-       score_data = ScoreFunctions<double>::compute_wilcoxon_risk_with_data(data, solution);
+       score_data = ScoreFunctions<double>::compute_wilcoxon_risk_with_stats(data, solution);
+       break;
      default :
        Rcpp::stop("Wrong score type");
      }
-     cocktail_scores.push_back(score_data.score);
-     cocktail_taker.push_back(score_data.covered_patients);
+     cocktail_scores.push_back(score_data.first.score);
+     cocktail_taker.push_back(score_data.first.covered_patients);
+     diff_QT_distribution.emplace_back(score_data.second);
    }
  }
  return Rcpp::List::create(
    Rcpp::Named("solutions") = cocktail_list,
    Rcpp::Named("scores") = Rcpp::wrap(cocktail_scores),
-   Rcpp::Named("number of takers") = Rcpp::wrap(cocktail_taker)
+   Rcpp::Named("number of takers") = Rcpp::wrap(cocktail_taker),
+   Rcpp::Named("QT_diff_distribution") = Rcpp::wrap(diff_QT_distribution)
  );
 }

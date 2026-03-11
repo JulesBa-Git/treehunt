@@ -260,17 +260,51 @@ public:
                 return p1.first < p2.first;
               });
     
+    // Handle 0 ties when the QT before the medication intake is the first/only 
+    // one available
     double rank_sum1 = 0;
+    double tie_adjustment = 0;
+    double n = static_cast<double>(combined_vec.size());
+    
+    size_t i = 0;
+    while (i < combined_vec.size()) {
+      size_t j = i;
+      // Find range of identical values
+      while (j + 1 < combined_vec.size() && combined_vec[j + 1].first == combined_vec[i].first) {
+        j++;
+      }
+      
+      size_t group_size = j - i + 1;
+      if (group_size > 1) {
+        // Formula for tie correction: sum(t^3 - t)
+        double t = static_cast<double>(group_size);
+        tie_adjustment += (t * t * t - t);
+      }
+      
+      // Average rank for this block: (start_rank + end_rank) / 2
+      double mid_rank = (static_cast<double>(i + 1) + static_cast<double>(j + 1)) / 2.0;
+      
+      // Apply this rank to all members of group 1 in this tie-block
+      for (size_t k = i; k <= j; ++k) {
+        if (combined_vec[k].second == 1) {
+          rank_sum1 += mid_rank;
+        }
+      }
+      i = j + 1;
+    }
+    
+    /*double rank_sum1 = 0;
     for(size_t i = 0 ; i < combined_vec.size(); ++i){
       if(combined_vec[i].second == 1)
         rank_sum1 += (i+1); 
-    }
+    }*/
     
     double U_1 = rank_sum1 - (noncovered * (noncovered + 1) / 2.0);
     double mu_u = (static_cast<double>(noncovered * result.covered_patients)) / 2.0;
-    double var_u = (static_cast<double>(noncovered * result.covered_patients *
-                    (noncovered + result.covered_patients + 1))) / 12.0;
-    
+    /*double var_u = (static_cast<double>(noncovered * result.covered_patients *
+                    (noncovered + result.covered_patients + 1))) / 12.0;*/
+    double var_u = 
+      (noncovered * static_cast<double>(result.covered_patients) / (12.0 * n * (n - 1.0))) * ((n * n * n - n) - tie_adjustment);
     if(var_u <= 0){
       result.score = 0.0;
       return result;
@@ -279,7 +313,10 @@ public:
     double sigma_u = std::sqrt(var_u);
     // Continuity correction since covered will probably be small
     double diff = U_1 - mu_u;
-    double corrected_diff = diff > 0 ? diff - 0.5 : diff + 0.5;
+    
+    double corrected_diff = 0;
+    if (diff > 0.5) corrected_diff = diff - 0.5;
+    else if (diff < -0.5) corrected_diff = diff + 0.5;
     
     double Z = corrected_diff / sigma_u;
     
@@ -288,6 +325,120 @@ public:
     result.score = -log_p;
     return result;
   }
+  
+  //function used for post-processing for now
+  static std::pair<ScoreData, std::vector<double>> 
+    compute_wilcoxon_risk_with_stats(const PatientData<TargetType>& data,
+                                                   const Solution& solution,
+                                                   bool parallel = true){
+
+    ScoreData result;
+    result.covered_patients = 0;
+    result.covered_nonzero_target = 0;
+    double noncovered = 0;
+    std::vector<double> diff_QT_values;
+    
+    const auto& nodes = solution.get_nodes();
+    
+    //vector of pair <value, group>
+    std::vector<std::pair<double,int>> combined_vec(data.size());
+    
+    bool use_parallel = parallel && data.size() > 1000;
+    double tmp_covered = 0;
+    
+#ifdef _OPENMP
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered, noncovered)
+#endif
+    for(size_t i = 0; i < data.size(); ++i){
+      bool patient_have_solution = data.patient_has_combination(i, nodes);
+      
+      if(patient_have_solution){
+        ++tmp_covered;
+        combined_vec[i] = {data.get_target(i), 2};
+      }else{ 
+        ++noncovered;
+        combined_vec[i] = {data.get_target(i), 1};
+      }
+    }
+    
+    result.covered_patients = tmp_covered;
+
+    if (result.covered_patients == 0 || noncovered < 1){
+      result.score = 0.0;
+      return std::make_pair(result, std::vector<double>());
+    }
+    
+    for(const auto& [diff, group] : combined_vec){
+      if(group == 2)
+        diff_QT_values.push_back(diff);
+    }
+    
+    std::sort(combined_vec.begin(), combined_vec.end(), 
+              [](const std::pair<double, int>& p1, const std::pair<double, int>& p2){
+                return p1.first < p2.first;
+              });
+    
+    // Handle 0 ties when the QT before the medication intake is the first/only 
+    // one available
+    double rank_sum1 = 0;
+    double tie_adjustment = 0;
+    double n = static_cast<double>(combined_vec.size());
+    
+    size_t i = 0;
+    while (i < combined_vec.size()) {
+      size_t j = i;
+      // Find range of identical values
+      while (j + 1 < combined_vec.size() && combined_vec[j + 1].first == combined_vec[i].first) {
+        j++;
+      }
+      
+      size_t group_size = j - i + 1;
+      if (group_size > 1) {
+        // Formula for tie correction: sum(t^3 - t)
+        double t = static_cast<double>(group_size);
+        tie_adjustment += (t * t * t - t);
+      }
+      
+      // Average rank for this block: (start_rank + end_rank) / 2
+      double mid_rank = (static_cast<double>(i + 1) + static_cast<double>(j + 1)) / 2.0;
+      
+      // Apply this rank to all members of group 1 in this tie-block
+      for (size_t k = i; k <= j; ++k) {
+        if (combined_vec[k].second == 1) {
+          rank_sum1 += mid_rank;
+        }
+      }
+      i = j + 1;
+    }
+    
+    double U_1 = rank_sum1 - (noncovered * (noncovered + 1) / 2.0);
+    double mu_u = (static_cast<double>(noncovered * result.covered_patients)) / 2.0;
+    /*double var_u = (static_cast<double>(noncovered * result.covered_patients *
+                    (noncovered + result.covered_patients + 1))) / 12.0;*/
+    double var_u = 
+      (noncovered * static_cast<double>(result.covered_patients) / (12.0 * n * (n - 1.0))) * ((n * n * n - n) - tie_adjustment);
+    
+    
+    if(var_u <= 0){
+      result.score = 0.0;
+      return std::make_pair(result, std::vector<double>());
+    }
+    
+    double sigma_u = std::sqrt(var_u);
+    // Continuity correction since covered will probably be small
+    double diff = U_1 - mu_u;
+    double corrected_diff = 0;
+    if (diff > 0.5) corrected_diff = diff - 0.5;
+    else if (diff < -0.5) corrected_diff = diff + 0.5;
+    
+    double Z = corrected_diff / sigma_u;
+    
+    double log_p= R::pnorm(Z, 0.0, 1.0, true, true);
+    
+    result.score = -log_p;
+    return std::make_pair(result, diff_QT_values);
+  }
+  
   
   static double compute_wilcoxon_risk(const PatientData<TargetType>& data,
                                                    const Solution& solution,

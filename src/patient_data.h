@@ -59,10 +59,10 @@ public:
     const auto& patient_nodes = patient_nodes_[i];
     const auto& upper_bound = tree_.get_upper_bound();
     
-    for(int patient_node : patient_nodes){
+    for(int solution_node : solution_nodes){
       bool is_covered = false;
       
-      for(int solution_node : solution_nodes){
+      for(int patient_node : patient_nodes){
         if(patient_node >= solution_node &&
            patient_node <= upper_bound[solution_node]){
           is_covered = true;
