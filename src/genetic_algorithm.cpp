@@ -235,7 +235,6 @@ GAResults GeneticAlgorithm<TargetType>::run(){
       
     
     if(params_.verbose && (i % 10 == 0 || i == params_.epochs - 1)){
-      // Find current best
       double best_score = 0.0;
       for(const auto& sol : population_){
         if(sol.get_score() > best_score){

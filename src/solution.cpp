@@ -261,8 +261,13 @@ std::pair<Solution, Solution> Solution::crossover_single_point(
     selected_node_sol_2.push_back(selected_node);
   }
   
-  return std::make_pair(Solution(std::move(selected_node_sol_1)),
-                        Solution(std::move(selected_node_sol_2)));
+  auto returned_pair = std::make_pair(Solution(std::move(selected_node_sol_1)),
+                 Solution(std::move(selected_node_sol_2)));
+  
+  if(!returned_pair.first.is_valid(tree) ||!returned_pair.second.is_valid(tree))
+    return {parent1, parent2};
+  
+  return returned_pair;
 }
 
 void Solution::print() const {
