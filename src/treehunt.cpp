@@ -950,3 +950,42 @@ Rcpp::List compute_score(
    Rcpp::Named("QT_diff_distribution") = Rcpp::wrap(diff_QT_distribution)
  );
 }
+
+
+//' Compute the dissimilarity matrix on a list of cocktails
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericMatrix get_dissimilarity_of_list(
+    Rcpp::List cocktail_list,
+    Rcpp::DataFrame patient_data,
+    SEXP node_column,
+    SEXP target_column,
+    Rcpp::DataFrame tree,
+    SEXP depth_column,
+    SEXP upper_bound_column = R_NilValue,
+    SEXP name_column = R_NilValue,
+    std::string score_type = "wilcoxon"
+){
+  
+  tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
+  
+  // Setup GA parameters
+  GAParams params;
+  params.population_size = cocktail_list.size();
+  
+  // Detect target type and run appropriate template
+  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
+  
+  Rcpp::NumericMatrix results;
+  
+  if (target_type == TargetTypeDetected::BINARY) {
+    PatientData<int> data(patient_data, node_column, target_column, cppTree);
+    GeneticAlgorithm<int> algorithm(data, params, cocktail_list);
+    results = algorithm.population_dissimilarity();
+  } else {
+    PatientData<double> data(patient_data, node_column, target_column, cppTree);
+    GeneticAlgorithm<double> algorithm(data, params, cocktail_list);
+    results = algorithm.population_dissimilarity();
+  }
+  return results;
+}

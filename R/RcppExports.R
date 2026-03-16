@@ -568,3 +568,9 @@ compute_score <- function(cocktail_list, patient_data, node_column, target_colum
     .Call(`_treehunt_compute_score`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type)
 }
 
+#' Compute the dissimilarity matrix on a list of cocktails
+#' @export
+get_dissimilarity_of_list <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, score_type = "wilcoxon") {
+    .Call(`_treehunt_get_dissimilarity_of_list`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type)
+}
+

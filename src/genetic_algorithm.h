@@ -67,7 +67,9 @@ public :
   
   GAResults extract_results() const;
   const std::vector<Solution>& get_population() const { return population_; }
-  
+  std::pair<std::vector<std::vector<int>>, std::vector<int>> 
+    dissimilarity_input_computation() const;
+  Rcpp::NumericMatrix population_dissimilarity() const;
 };
 
 #endif

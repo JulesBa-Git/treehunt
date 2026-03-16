@@ -513,6 +513,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_dissimilarity_of_list
+Rcpp::NumericMatrix get_dissimilarity_of_list(Rcpp::List cocktail_list, Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, std::string score_type);
+RcppExport SEXP _treehunt_get_dissimilarity_of_list(SEXP cocktail_listSEXP, SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP score_typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type cocktail_list(cocktail_listSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< std::string >::type score_type(score_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_dissimilarity_of_list(cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_create_patient_data_int", (DL_FUNC) &_treehunt_test_create_patient_data_int, 4},
@@ -552,6 +571,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_run_mcmc_df_tree", (DL_FUNC) &_treehunt_run_mcmc_df_tree, 16},
     {"_treehunt_run_genetic_algorithm_df_tree", (DL_FUNC) &_treehunt_run_genetic_algorithm_df_tree, 19},
     {"_treehunt_compute_score", (DL_FUNC) &_treehunt_compute_score, 9},
+    {"_treehunt_get_dissimilarity_of_list", (DL_FUNC) &_treehunt_get_dissimilarity_of_list, 9},
     {NULL, NULL, 0}
 };
 

@@ -93,7 +93,7 @@ void GeneticAlgorithm<TargetType>::evaluate(){
 
 template<typename TargetType>
 void GeneticAlgorithm<TargetType>::penalize(){
-  auto [M, index] = data_.dissimilarity_input_computation();
+  auto [M, index] = dissimilarity_input_computation();
   
   std::vector<std::vector<double>> 
     similarity(population_.size(), std::vector<double>(population_.size(), -1.0));
@@ -271,6 +271,92 @@ GAResults GeneticAlgorithm<TargetType>::run(){
   
   return results;
   
+}
+
+template<typename TargetType>
+std::pair<std::vector<std::vector<int>>, std::vector<int>> 
+  GeneticAlgorithm<TargetType>::dissimilarity_input_computation() const {
+  std::vector<std::vector<int>> M;
+  std::vector<int> index;
+  
+  const auto& tree = data_.get_tree();
+  const auto& father = tree.get_father();
+  const auto& depth = tree.get_depth();
+  
+  int node_count = 0;
+  
+  for(const auto& nodes : population_){
+    node_count+= nodes.size();
+  }
+  
+  index.reserve(population_.size());
+  M.resize(node_count);
+  
+  for(size_t i = 0; i < M.size(); ++i)
+    M[i].reserve(tree.max_depth() + 1);
+  
+  size_t row = 0;
+  size_t current_patient_node_index = 0;
+  for(const Solution& sol : population_){
+    const auto& nodes_vector = sol.get_nodes();
+    for(const auto& node : nodes_vector){
+      //if we are not on max_depth, we should push the node on the lower
+      //depth 
+      for(int i = tree.max_depth(); i >= depth[node]; --i){
+        //add the node
+        M[row].push_back(node);
+      }
+      int current_father = father[node];
+      //add the father of this node
+      while(depth[current_father] >= 1){
+        M[row].push_back(current_father);
+        current_father = father[current_father];
+      }// push the father of depth 1
+      M[row++].push_back(current_father);
+    }
+    index.push_back(current_patient_node_index);
+    current_patient_node_index += nodes_vector.size();
+  }
+  
+  return std::make_pair(std::move(M), std::move(index));
+}
+
+template<typename TargetType>
+ Rcpp::NumericMatrix GeneticAlgorithm<TargetType>::population_dissimilarity() const{
+   auto [M, index] = dissimilarity_input_computation();
+   size_t n = population_.size();
+   std::cout << "individual 1 information : \n";
+   for(int i = index[0]; i < index[1]; ++i){
+     for(int j = 0; j < M[i].size(); ++j){
+       std::cout << M[i][j] << " ";
+     }
+     std::cout << "\n";
+   }
+   std::cout << "individual 2 information : \n";
+   for(int i = index[1]; i < index[2]; ++i){
+     for(int j = 0; j < M[i].size(); ++j){
+       std::cout << M[i][j] << " ";
+     }
+     std::cout << "\n";
+   }
+   Rcpp::NumericMatrix dissimilarity(n, n);
+   dissimilarity.fill(-1.0);
+   
+   for(size_t i = 0; i < n -1 ; ++i){ 
+     dissimilarity(i, i) = 0.0;
+     for(size_t j = i+1; j < n ; ++j){
+       
+       if(dissimilarity(i, j) < 0){
+         double i_j_dissimilarity = normalized_distance(i, j, M, index, data_.get_tree().max_depth());
+         
+         dissimilarity(i,j) = i_j_dissimilarity;
+         dissimilarity(j, i) = i_j_dissimilarity;
+       }
+     }
+   }
+   dissimilarity(n-1, n-1) = 0.0;
+   
+   return dissimilarity;
 }
 
 template class GeneticAlgorithm<int>;
