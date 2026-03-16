@@ -325,20 +325,6 @@ template<typename TargetType>
  Rcpp::NumericMatrix GeneticAlgorithm<TargetType>::population_dissimilarity() const{
    auto [M, index] = dissimilarity_input_computation();
    size_t n = population_.size();
-   std::cout << "individual 1 information : \n";
-   for(int i = index[0]; i < index[1]; ++i){
-     for(int j = 0; j < M[i].size(); ++j){
-       std::cout << M[i][j] << " ";
-     }
-     std::cout << "\n";
-   }
-   std::cout << "individual 2 information : \n";
-   for(int i = index[1]; i < index[2]; ++i){
-     for(int j = 0; j < M[i].size(); ++j){
-       std::cout << M[i][j] << " ";
-     }
-     std::cout << "\n";
-   }
    Rcpp::NumericMatrix dissimilarity(n, n);
    dissimilarity.fill(-1.0);
    
