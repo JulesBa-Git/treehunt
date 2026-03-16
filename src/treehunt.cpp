@@ -274,7 +274,7 @@ Rcpp::List run_mcmc(
 //' @param node_column Either a string (column name) or integer (column index, 1-based)
 //'   specifying the column containing node indexes. This column should be either:
 //'   \itemize{
-//'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+//'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
 //'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 //'   }
 //' @param target_column Either a string (column name) or integer (column index, 1-based)
@@ -471,6 +471,221 @@ Rcpp::List run_genetic_algorithm(
    Rcpp::Named("statistics") = statistics
  );
 }
+
+//' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
+//' Tree
+//'
+//' Performs a Modified Metropolis-Hastings MCMC sampling to estimate the score
+//' distribution of nodes combination of a given \emph{cocktail_size}. The
+//' algorithm explores the space of tree combinations using a proposal law 
+//' composed of two mutation types.
+//'
+//' @param patient_data A data.frame containing patient information with at least
+//'   a node column and a target column.
+//' @param node_column Either a string (column name) or integer (column index, 1-based)
+//'   specifying the column containing drug codes. This column should be either:
+//'   \itemize{
+//'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+//'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+//'   }
+//' @param target_column Either a string (column name) or integer (column index, 1-based)
+//'   specifying the target/outcome column. Integer values are treated as binary for now,
+//'   numeric values with non-0/1 entries are treated as continuous.
+//' @param tree A data.frame containing the structural definition of the tree.
+//' @param depth_column Either a string or integer specifying the column in 
+//'   \code{tree} that contains the node depth levels.
+//' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+//'  specifying the column in \code{tree_depth} that contains upper 
+//'  bound of nodes. Defaults to \code{NULL}.
+//' @param name_column (Optional) Either a string or integer (1-based index) 
+//'  specifying the column in \code{tree} that contains the corresponding name
+//'  of nodes. Defaults to \code{NULL}.
+ //' @param epochs Number of MCMC iterations to run.
+//' @param temperature Temperature parameter for the Metropolis-Hastings acceptance
+//'   probability. Higher values lead to an easiest acceptance of lower score. Default: 1.0.
+//' @param n_results Number of top solutions to track and return. Default: 10.
+//' @param cocktail_size Target size of drug combinations to search for. Default: 2.
+//' @param prob_type1 Probability of using Type 1 mutation (random generation) vs
+//'   Type 2 mutation (local swap). Default: 0.01.
+//' @param beta Minimum number of patients that must be covered for a solution to
+//'   be included in the filtered results. Default: 4.
+//' @param max_score Maximum score value for binning in the score distribution.
+//'   Scores above this are tracked separately. Default: 200.0.
+//' @param score_type Scoring function to use. Either "hypergeometric" for the
+//'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+//'   for the wilcoxon test with continuous output.
+//'   Default: "hypergeometric".
+//' @param verbose If TRUE, prints progress and statistics during the run.
+//'   Default: FALSE.
+//'
+//' @return A list containing:
+//'   \describe{
+//'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+//'     \item{top_scores}{Numeric vector of scores for the top solutions}
+//'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
+//'     \item{top_scores_filtered}{Scores for the filtered solutions}
+//'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+//'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
+//'     \item{outstanding_scores}{Scores that exceeded max_score}
+//'     \item{statistics}{List of run statistics including acceptance rates}
+//'   }
+//'
+//' @details
+//' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
+//' proposal types:
+//' \itemize{
+//'   \item \strong{Type 1}: Generates a completely new random valid solution
+//'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
+//' }
+//'
+//' The acceptance probability for Type 1 proposal is:
+//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+//'
+//' For Type 2 proposals, a proposal ratio correction is applied since the ratio
+//' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+//'
+//' where \eqn{|V|} is the number of possible swap vertices for a solution.
+//'
+//' Solutions are only accepted if they appear in at least one patient's data
+//' ("modified" constraint).
+//'
+//' @examples
+//' \dontrun{
+//' # Create example data
+//' patient_df <- data.frame(
+//'   patient_id = 1:100,
+//'   outcome = rbinom(100, 1, 0.3)
+//' )
+//' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+//'
+//' # Define tree structure (simple 3-level tree)
+//' tree_depth <- c(1, rep(2, 5), rep(3, 15))
+//'
+//' # Run MCMC
+//' results <- run_mcmc(
+//'   patient_data = patient_df,
+//'   node_column = "drugs",
+//'   target_column = "outcome",
+//'   tree = tree_df,
+//'   depth_column = "depth_level", # or 2
+//'   epochs = 5000,
+//'   cocktail_size = 2,
+//'   score_type = "hypergeometric",
+//'   verbose = TRUE
+//' )
+//'
+//' # View top results
+//' print(results$top_scores)
+//' print(results$top_solutions)
+//' }
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::List run_mcmc_df_tree(
+   Rcpp::DataFrame patient_data,
+   SEXP node_column,
+   SEXP target_column,
+   Rcpp::DataFrame tree,
+   SEXP depth_column,
+   SEXP upper_bound_column = R_NilValue,
+   SEXP name_column = R_NilValue,
+   size_t epochs = 1e6,
+   double temperature = 1.0,
+   size_t n_results = 10,
+   size_t cocktail_size = 2,
+   double prob_type1 = 0.01,
+   size_t beta = 4,
+   double max_score = 200.0,
+   std::string score_type = "hypergeometric",
+   bool verbose = false) {
+ 
+ // Validate inputs
+ if (patient_data.nrows() == 0) {
+   Rcpp::stop("patient_data cannot be empty");
+ }
+ if (tree.nrow() == 0) {
+   Rcpp::stop("tree_depth cannot be empty");
+ }
+ if (epochs == 0) {
+   Rcpp::stop("epochs must be positive");
+ }
+ if (temperature <= 0) {
+   Rcpp::stop("temperature must be positive");
+ }
+ if (prob_type1 < 0 || prob_type1 > 1) {
+   Rcpp::stop("prob_type1 must be between 0 and 1");
+ }
+ 
+ // Build tree structure
+ tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
+ 
+ // Setup MCMC parameters
+ MCMCParams params;
+ params.epochs = epochs;
+ params.temperature = temperature;
+ params.n_results = n_results;
+ params.cocktail_size = cocktail_size;
+ params.prob_mutation_type1 = prob_type1;
+ params.beta = beta;
+ params.max_score = max_score;
+ params.score_type_ = parse_score_type(score_type);
+ params.verbose = verbose;
+ 
+ // Detect target type and run appropriate template
+ TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
+ MCMCResults results;
+ 
+ if (target_type == TargetTypeDetected::BINARY) {
+   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   MCMCAlgorithm<int> algorithm(data, params);
+   results = algorithm.run();
+ } else {
+   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   MCMCAlgorithm<double> algorithm(data, params);
+   results = algorithm.run();
+ }
+ 
+ // Convert top_solutions to R list
+ Rcpp::List top_solutions_list(results.top_solutions.size());
+ for (size_t i = 0; i < results.top_solutions.size(); ++i) {
+   top_solutions_list[i] = Rcpp::wrap(results.top_solutions[i]);
+ }
+ 
+ Rcpp::List top_solutions_filtered_list(results.top_solutions_filtered.size());
+ for (size_t i = 0; i < results.top_solutions_filtered.size(); ++i) {
+   top_solutions_filtered_list[i] = Rcpp::wrap(results.top_solutions_filtered[i]);
+ }
+ 
+ // Build statistics list
+ Rcpp::List statistics = Rcpp::List::create(
+   Rcpp::Named("total_iterations") = results.total_iterations,
+   Rcpp::Named("accepted_moves") = results.accepted_moves,
+   Rcpp::Named("rejected_moves") = results.rejected_moves,
+   Rcpp::Named("acceptance_rate") = static_cast<double>(results.accepted_moves) / 
+     static_cast<double>(results.total_iterations),
+     Rcpp::Named("proposals_not_in_population") = results.proposals_not_in_population,
+     Rcpp::Named("type1_moves") = results.type1_moves,
+     Rcpp::Named("type2_moves") = results.type2_moves,
+     Rcpp::Named("type1_accepted") = results.type1_accepted,
+     Rcpp::Named("type2_accepted") = results.type2_accepted,
+     Rcpp::Named("type1_in_population") = results.type1_in_population,
+     Rcpp::Named("type2_in_population") = results.type2_in_population,
+     Rcpp::Named("cocktail_size") = results.cocktail_size
+ );
+ 
+ return Rcpp::List::create(
+   Rcpp::Named("top_solutions") = top_solutions_list,
+   Rcpp::Named("top_scores") = Rcpp::wrap(results.top_scores),
+   Rcpp::Named("top_solutions_filtered") = top_solutions_filtered_list,
+   Rcpp::Named("top_scores_filtered") = Rcpp::wrap(results.top_scores_filtered),
+   Rcpp::Named("score_distribution") = Rcpp::wrap(results.score_distribution),
+   Rcpp::Named("score_distribution_filtered") = Rcpp::wrap(results.score_distribution_filtered),
+   Rcpp::Named("outstanding_scores") = Rcpp::wrap(results.outstanding_scores),
+   Rcpp::Named("statistics") = statistics
+ );
+}
+
 
 
 //' Run Genetic Algorithm for High Score Nodes Combination Search

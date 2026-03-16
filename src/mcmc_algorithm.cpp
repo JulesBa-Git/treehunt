@@ -249,7 +249,6 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
             current_vertices.size(), proposed_vertices.size());
           
           if (uniform(rng_) < acceptance_prob) {
-            // Accept
             current = proposed;
             current_score = proposed_score;
             current_score_data = proposed_score_data;
