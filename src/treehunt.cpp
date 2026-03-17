@@ -728,7 +728,8 @@ Rcpp::List run_mcmc_df_tree(
 //'
 //' @return A list containing:
 //'   \describe{
-//'     \item{final_population}{The complete final population of solutions}
+//'     \item{final_population}{The complete final population of solutions, 0-based
+//'     tree index. TODO -> return 1 based (R-like) index for more coherence}
 //'     \item{final_scores}{Scores for all solutions in the final population}
 //'     \item{parameters}{List of parameters used for the run}
 //'     \item{statistics}{Additional information about cache hits, etc.}
