@@ -69,3 +69,51 @@ clustering_genetic_algorithm <- function(cocktails,
     return(cbind(data.frame(cocktails = I(working_list)), res_df))
   }
 }
+
+#' Plot GA Clustering Results
+#'
+#' This wrapper runs the clustering pipeline and produces a UMAP scatter plot 
+#' where points are colored by their identified cluster.
+#'
+#' @param cocktails A list of 1-based integer vectors or a data frame containing them.
+#' @param ... Arguments passed directly to \code{\link{clustering_genetic_algorithm}}.
+#' @param point_size Numeric. Size of the points in the scatter plot. Default is 2.
+#' @param alpha Numeric. Transparency of the points. Default is 0.7.
+#'
+#' @return A list containing:
+#' \itemize{
+#'   \item \code{data}: The data frame with UMAP coordinates and cluster assignments.
+#'   \item \code{plot}: A ggplot2 object.
+#' }
+#' @export
+plot_ga_clusters <- function(cocktails, 
+                             point_size = 2, 
+                             alpha = 0.7, 
+                             ...) {
+  
+  requireNamespace("ggplot2", quietly = TRUE)
+  
+  # Run the clustering logic
+  clustered_data <- clustering_genetic_algorithm(cocktails = cocktails, ...)
+  clustered_data$cluster <- as.factor(clustered_data$cluster)
+  
+  # Plot
+  p <- ggplot2::ggplot(clustered_data, 
+                       ggplot2::aes(x = UMAP1, y = UMAP2, color = cluster)) +
+    ggplot2::geom_point(size = point_size, alpha = alpha) +
+    ggplot2::theme_minimal() +
+    #ggplot2::scale_color_viridis_d(option = "plasma") +
+    ggplot2::labs(
+      title = "Genetic Algorithm Cocktail Clusters",
+      subtitle = paste("UMAP Projection with DBSCAN Clustering"),
+      x = "UMAP Dimension 1",
+      y = "UMAP Dimension 2",
+      color = "Cluster"
+    ) +
+    ggplot2::theme(
+      legend.position = "right",
+      plot.title = ggplot2::element_text(face = "bold")
+    )
+  
+  return(list(data = clustered_data, plot = p))
+}

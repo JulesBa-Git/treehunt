@@ -48,6 +48,9 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   } else if (score_type_str == "Wilcoxon" || score_type_str == "WILCOXON" ||
     score_type_str == "wilcoxon" || score_type_str == "wilc") {
     return ScoreType::WILCOXON;
+  }else if (score_type_str == "composite" || score_type_str == "Composite" ||
+    score_type_str == "QT") {
+    return ScoreType::COMPOSITE;
   }else {
     Rcpp::stop("Unknown score type: '" + score_type_str + 
       "'. Use one of 'hypergeometric', 'relative_risk', 'wilcoxon'.");
@@ -936,6 +939,7 @@ Rcpp::List compute_score(
      case ScoreType::WILCOXON :
        score_data = ScoreFunctions<double>::compute_wilcoxon_risk_with_stats(data, solution);
        break;
+       
      default :
        Rcpp::stop("Wrong score type");
      }

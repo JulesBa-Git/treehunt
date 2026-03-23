@@ -243,3 +243,39 @@ summarize_ga_pipeline <- function(folder_path,
   message("Success!")
   return(results)
 }
+
+#' Filter a list of cocktails accoring to the mean depth of nodes inside 
+#' each cocktail. A cocktail is kept if the mean depth of his nodes is greater 
+#' than \code{mean_depth_cocktail} (default = 3). This function aim is to provide
+#' more interpretable cocktail to the user.
+#' 
+#' @param results results returned by function \code{summarize_ga_pipeline}. Or a 
+#' list of string of 0 indexed vector of tree nodes. (If nodes are 1-indexed, make sure that the parameter
+#' one_index is set to TRUE).
+#' @param tree_depth The tree structure depth.
+#' @param mean_depth_cocktail The desired minimal mean depth of nodes in a cocktail.
+#' @param one_index A boolean telling if the cocktails are 1-indexed or 0-indexed. Default is TRUE
+#' 
+#' @return The filtered list of cocktail
+#' @export
+filter_out_cocktails <- function(results, 
+                                 tree_depth,
+                                 mean_depth_cocktail = 3,
+                                 one_index = FALSE){
+  filtered_results <- results %>%
+    mutate(
+      tmp_idx = strsplit(cocktail, ",") %>% lapply(as.integer)
+    )
+  
+  if (!one_index) {
+    filtered_results$tmp_idx <- lapply(filtered_results$tmp_idx, function(x) x + 1)
+  }
+  
+  filtered_results <- filtered_results %>% mutate(
+    mean_depth = sapply(tmp_idx, function(vec){return(mean(tree_depth[vec]))})
+  ) %>%
+    filter(mean_depth >= mean_depth_cocktail) %>%
+    select(!mean_depth)
+  
+  return(filtered_results)
+}
