@@ -956,7 +956,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //' tree_depth <- c(1, rep(2, 5), rep(3, 15))
 //'
 //' # Run MCMC
-//' results <- mcmc_dize_2_true_score_distribution(
+//' results <- mcmc_size_2_true_score_distribution(
 //'   patient_data = patient_df,
 //'   node_column = "drugs",
 //'   target_column = "outcome",
@@ -971,7 +971,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List mcmc_dize_2_true_score_distribution(
+Rcpp::List mcmc_size_2_true_score_distribution(
    Rcpp::DataFrame patient_data,
    SEXP node_column,
    SEXP target_column,
