@@ -481,7 +481,7 @@ public:
     
     if (result.covered_patients == 0 || noncovered < 1){
       result.score = 0.0;
-      return std::make_pair(result);
+      return result;
     }
     
     // global sort
