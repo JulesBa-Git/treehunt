@@ -643,7 +643,7 @@ run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_colu
 #' tree_depth <- c(1, rep(2, 5), rep(3, 15))
 #'
 #' # Run MCMC
-#' results <- mcmc_dize_2_true_score_distribution(
+#' results <- mcmc_size_2_true_score_distribution(
 #'   patient_data = patient_df,
 #'   node_column = "drugs",
 #'   target_column = "outcome",
@@ -657,8 +657,8 @@ run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_colu
 #' }
 #'
 #' @export
-mcmc_dize_2_true_score_distribution <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, beta = 4L, max_score = 200.0, score_type = "hypergeometric") {
-    .Call(`_treehunt_mcmc_dize_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type)
+mcmc_size_2_true_score_distribution <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, beta = 4L, max_score = 200.0, score_type = "hypergeometric") {
+    .Call(`_treehunt_mcmc_size_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type)
 }
 
 #' Compute score on a list of cocktails
