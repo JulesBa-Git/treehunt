@@ -563,6 +563,104 @@ run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_colu
     .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 
+#' Run MCMC Algorithm to Compute the Score Distribution Among Node Combinations 
+#' of Size 2
+#'
+#' Performs a Modified Metropolis-Hastings MCMC sampling to compute the score
+#' distribution of nodes combination of size \emph{cocktail_size}.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing drug codes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary for now,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree A data.frame containing the structural definition of the tree.
+#' @param depth_column Either a string or integer specifying the column in 
+#'   \code{tree} that contains the node depth levels.
+#' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree_depth} that contains upper 
+#'  bound of nodes. Defaults to \code{NULL}.
+#' @param name_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree} that contains the corresponding name
+#'  of nodes. Defaults to \code{NULL}.
+#' @param beta Minimum number of patients that must be covered for a solution to
+#'   be included in the filtered results. Default: 4.
+#' @param max_score Maximum score value for binning in the score distribution.
+#'   Scores above this are tracked separately. Default: 200.0.
+#' @param score_type Scoring function to use. Either "hypergeometric" for the
+#'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+#'   for the wilcoxon test with continuous output.
+#'   Default: "hypergeometric".
+#'
+#' @return A list containing:
+#'   \describe{
+#'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+#'     \item{top_scores}{Numeric vector of scores for the top solutions}
+#'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
+#'     \item{top_scores_filtered}{Scores for the filtered solutions}
+#'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+#'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
+#'     \item{outstanding_scores}{Scores that exceeded max_score}
+#'     \item{statistics}{List of run statistics including acceptance rates}
+#'   }
+#'
+#' @details
+#' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
+#' proposal types:
+#' \itemize{
+#'   \item \strong{Type 1}: Generates a completely new random valid solution
+#'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
+#' }
+#'
+#' The acceptance probability for Type 1 proposal is:
+#' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+#'
+#' For Type 2 proposals, a proposal ratio correction is applied since the ratio
+#' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+#' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+#'
+#' where \eqn{|V|} is the number of possible swap vertices for a solution.
+#'
+#' Solutions are only accepted if they appear in at least one patient's data
+#' ("modified" constraint).
+#'
+#' @examples
+#' \dontrun{
+#' # Create example data
+#' patient_df <- data.frame(
+#'   patient_id = 1:100,
+#'   outcome = rbinom(100, 1, 0.3)
+#' )
+#' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+#'
+#' # Define tree structure (simple 3-level tree)
+#' tree_depth <- c(1, rep(2, 5), rep(3, 15))
+#'
+#' # Run MCMC
+#' results <- mcmc_dize_2_true_score_distribution(
+#'   patient_data = patient_df,
+#'   node_column = "drugs",
+#'   target_column = "outcome",
+#'   tree = tree_df,
+#'   depth_column = "depth_level", # or 2
+#'   score_type = "hypergeometric"
+#' )
+#'
+#' # View top results
+#' print(results$score_distribution)
+#' }
+#'
+#' @export
+mcmc_dize_2_true_score_distribution <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, beta = 4L, max_score = 200.0, score_type = "hypergeometric") {
+    .Call(`_treehunt_mcmc_dize_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type)
+}
+
 #' Compute score on a list of cocktails
 #' @export
 compute_score <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, score_type = "hypergeometric") {

@@ -53,6 +53,10 @@ public:
     return max_depth_;
   }
   
+  inline size_t size() const{
+    return depth_.size();
+  }
+  
   void initialize_upper_bound();
   void add_names(const Rcpp::CharacterVector& names);
   void compute_father();

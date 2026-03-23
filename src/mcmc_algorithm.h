@@ -112,6 +112,7 @@ public:
                 const MCMCParams& params);
   
   MCMCResults run();
+  MCMCResults true_size2_distribution();
   
   const MCMCResults& get_results() const { return results_; }
 };

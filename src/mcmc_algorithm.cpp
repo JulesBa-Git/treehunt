@@ -300,5 +300,24 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
   return results_;
 }
 
+template<typename TargetType>
+MCMCResults MCMCAlgorithm<TargetType>::true_size2_distribution() {
+  
+  const auto& tree = data_.get_tree();
+  size_t tree_size = tree.size();
+  
+  for(int i = 0; i < tree_size-1; ++i){
+    for(int j = i; j < tree_size; ++j ){
+      Solution explorer({i,j});
+      
+      auto results_score = compute_score(explorer);
+      update_score_distribution(results_score.score, results_score.covered_patients);
+    }
+  }
+  finalize_results();
+  return results_;
+}
+
+
 template class MCMCAlgorithm<int>;
 template class MCMCAlgorithm<double>;

@@ -494,6 +494,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mcmc_dize_2_true_score_distribution
+Rcpp::List mcmc_dize_2_true_score_distribution(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, size_t beta, double max_score, std::string score_type);
+RcppExport SEXP _treehunt_mcmc_dize_2_true_score_distribution(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP score_typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< size_t >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type max_score(max_scoreSEXP);
+    Rcpp::traits::input_parameter< std::string >::type score_type(score_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(mcmc_dize_2_true_score_distribution(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_score
 Rcpp::List compute_score(Rcpp::List cocktail_list, Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, std::string score_type);
 RcppExport SEXP _treehunt_compute_score(SEXP cocktail_listSEXP, SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP score_typeSEXP) {
@@ -570,6 +590,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_run_genetic_algorithm", (DL_FUNC) &_treehunt_run_genetic_algorithm, 16},
     {"_treehunt_run_mcmc_df_tree", (DL_FUNC) &_treehunt_run_mcmc_df_tree, 16},
     {"_treehunt_run_genetic_algorithm_df_tree", (DL_FUNC) &_treehunt_run_genetic_algorithm_df_tree, 19},
+    {"_treehunt_mcmc_dize_2_true_score_distribution", (DL_FUNC) &_treehunt_mcmc_dize_2_true_score_distribution, 10},
     {"_treehunt_compute_score", (DL_FUNC) &_treehunt_compute_score, 9},
     {"_treehunt_get_dissimilarity_of_list", (DL_FUNC) &_treehunt_get_dissimilarity_of_list, 9},
     {NULL, NULL, 0}
