@@ -511,7 +511,8 @@ public:
     
     double median_covered = get_median(qt_covered);
     double median_noncovered = get_median(qt_noncovered);
-    double delta_median = median_covered - median_noncovered;
+    double effective_baseline_shift = std::max(0.0, median_noncovered);
+    double delta_median = median_covered - effective_baseline_shift;
     
     // Ranking
     double rank_sum1 = 0;
@@ -572,6 +573,9 @@ public:
     } else {*/
       // Fitness will seach for the maximal median QT augmentation and for the 
       // consistency of this effect using the biserial r-score.
+    if(r_score <= 0.0 || median_covered <= 0.0)
+      result.score = 0.0;
+    else
       result.score = delta_median * r_score;
     
     return result;
