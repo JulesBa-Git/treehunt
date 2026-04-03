@@ -563,23 +563,154 @@ public:
     double r_score = 1.0 - (2.0 * U_1) / (noncovered * result.covered_patients);
     
     // Composite scoring function
-    //TODO : we apply a threshold for the p-value?
-    /*
-    const double P_VALUE_THRESHOLD = -std::log(.05); 
+    // we apply a threshold for the p-value?
+    const double P_VALUE_THRESHOLD = -std::log(.075); 
     
     
-    if (-log_p < P_VALUE_THRESHOLD || delta_median <= 0.0 || r_score <= 0.0) {
+    if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
       result.score = 0.0; // P-value trop faible, ou le médicament réduit le QT (inintéressant)
-    } else {*/
-      // Fitness will seach for the maximal median QT augmentation and for the 
-      // consistency of this effect using the biserial r-score.
-    if(r_score <= 0.0 || median_covered <= 0.0)
-      result.score = 0.0;
-    else
+    } else {
       result.score = delta_median * r_score;
+    }
     
     return result;
   }
+  
+  static std::pair<ScoreData, std::vector<double>> 
+    compute_multifactor_risk_QT_with_stats(const PatientData<TargetType>& data,
+                                                         const Solution& solution,
+                                                         bool parallel = true){
+    ScoreData result;
+    result.covered_patients = 0;
+    result.covered_nonzero_target = 0;
+    double noncovered = 0;
+    const auto& nodes = solution.get_nodes();
+    std::vector<double> diff_QT_values;
+    
+    size_t n_total = data.size();
+    std::vector<std::pair<double, int>> combined_vec(n_total);
+    
+    bool use_parallel = parallel && n_total > 1000;
+    double tmp_covered = 0;
+    
+#ifdef _OPENMP
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered, noncovered)
+#endif
+    for(size_t i = 0; i < n_total; ++i) {
+      bool patient_have_solution = data.patient_has_combination(i, nodes);
+      
+      if(patient_have_solution) {
+        ++tmp_covered;
+        combined_vec[i] = {data.get_target(i), 2};
+      } else {
+        ++noncovered;
+        combined_vec[i] = {data.get_target(i), 1};
+      }
+    }
+    
+    result.covered_patients = tmp_covered;
+    
+    if (result.covered_patients == 0 || noncovered < 1){
+      result.score = 0.0;
+      return std::make_pair(result, std::vector<double>());
+    }
+    
+    // global sort
+    std::sort(combined_vec.begin(), combined_vec.end(), 
+              [](const std::pair<double, int>& p1, const std::pair<double, int>& p2){
+                return p1.first < p2.first;
+              });
+    
+    for(const auto& [diff, group] : combined_vec){
+      if(group == 2)
+        diff_QT_values.push_back(diff);
+    }
+    
+    // Median Extraction
+    std::vector<double> qt_covered;
+    std::vector<double> qt_noncovered;
+    qt_covered.reserve(result.covered_patients);
+    qt_noncovered.reserve(noncovered);
+    
+    // Vectors would be naturally sorted
+    for (const auto& p : combined_vec) {
+      if (p.second == 2)
+        qt_covered.push_back(p.first);
+      else
+        qt_noncovered.push_back(p.first);
+    }
+    
+    auto get_median = [](const std::vector<double>& v) {
+      size_t mid = v.size() / 2;
+      return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
+    };
+    
+    double median_covered = get_median(qt_covered);
+    double median_noncovered = get_median(qt_noncovered);
+    double effective_baseline_shift = std::max(0.0, median_noncovered);
+    double delta_median = median_covered - effective_baseline_shift;
+    
+    // Ranking
+    double rank_sum1 = 0;
+    double tie_adjustment = 0;
+    double n = static_cast<double>(n_total);
+    
+    size_t i = 0;
+    while (i < n_total) {
+      size_t j = i;
+      while (j + 1 < n_total && combined_vec[j + 1].first == combined_vec[i].first) {
+        j++;
+      }
+      size_t group_size = j - i + 1;
+      if (group_size > 1) {
+        double t = static_cast<double>(group_size);
+        tie_adjustment += (t * t * t - t);
+      }
+      double mid_rank = (static_cast<double>(i + 1) + static_cast<double>(j + 1)) / 2.0;
+      for (size_t k = i; k <= j; ++k) {
+        if (combined_vec[k].second == 1) {
+          rank_sum1 += mid_rank;
+        }
+      }
+      i = j + 1;
+    }
+    
+    double U_1 = rank_sum1 - (noncovered * (noncovered + 1) / 2.0);
+    double mu_u = (noncovered * result.covered_patients) / 2.0;
+    double var_u = (noncovered * result.covered_patients / (12.0 * n * (n - 1.0))) * ((n * n * n - n) - tie_adjustment);
+    
+    if (var_u <= 0) {
+      result.score = 0.0;
+      return std::make_pair(result, std::vector<double>());
+    }
+    
+    double sigma_u = std::sqrt(var_u);
+    double diff = U_1 - mu_u;
+    
+    double corrected_diff = 0;
+    if (diff > 0.5) corrected_diff = diff - 0.5;
+    else if (diff < -0.5) corrected_diff = diff + 0.5;
+    
+    double Z = corrected_diff / sigma_u;
+    double log_p = R::pnorm(Z, 0.0, 1.0, true, true);
+    
+    // Biserial rank correlation 
+    // U_1 correspond aux non-couverts. Plus le QT des couverts est long, plus U_1 est petit.
+    double r_score = 1.0 - (2.0 * U_1) / (noncovered * result.covered_patients);
+    
+    // Composite scoring function
+    // we apply a threshold for the p-value?
+     const double P_VALUE_THRESHOLD = -std::log(.075); 
+     
+    
+     if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
+     result.score = 0.0; // P-value trop faible ou le médicament réduit le QT (inintéressant)
+     }else{
+      result.score = delta_median * r_score;
+     }
+    return std::make_pair(result, diff_QT_values);
+  }
+  
   
   static double compute_multifactor_risk_QT(const PatientData<TargetType>& data,
                                       const Solution& solution,

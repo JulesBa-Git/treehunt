@@ -1121,6 +1121,11 @@ Rcpp::List compute_score(
      case ScoreType::WILCOXON :
        score_data = ScoreFunctions<double>::compute_wilcoxon_risk_with_stats(data, solution);
        break;
+     case ScoreType::COMPOSITE :
+       score_data = ScoreFunctions<double>::compute_multifactor_risk_QT_with_stats(
+         data, solution
+       );
+       break;
        
      default :
        Rcpp::stop("Wrong score type");
