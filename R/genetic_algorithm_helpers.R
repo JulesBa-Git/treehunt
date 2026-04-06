@@ -168,7 +168,7 @@ process_ga_scores <- function(df,
                               target_column,
                               depth_column,
                               upper_bound_column,
-                              score_type = "Wilcoxon",
+                              score_type = "composite",
                               ...) {
   
   # prepare indices (0-based to 1-based conversion) TODO : remove this once ga

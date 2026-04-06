@@ -479,7 +479,7 @@ public:
     
     result.covered_patients = tmp_covered;
     
-    if (result.covered_patients == 0 || noncovered < 1){
+    if (result.covered_patients < 1 || noncovered < 1){
       result.score = 0.0;
       return result;
     }
@@ -610,7 +610,7 @@ public:
     
     result.covered_patients = tmp_covered;
     
-    if (result.covered_patients == 0 || noncovered < 1){
+    if (result.covered_patients < 1 || noncovered < 1){
       result.score = 0.0;
       return std::make_pair(result, std::vector<double>());
     }
@@ -703,11 +703,12 @@ public:
      const double P_VALUE_THRESHOLD = -std::log(.05); 
      
     
-     if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
-     result.score = 0.0; // P-value trop faible ou le médicament réduit le QT (inintéressant)
-     }else{
+    if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
+      result.score = 0.0; // P-value trop faible, ou le médicament réduit le QT (inintéressant)
+    } else {
       result.score = delta_median * r_score;
-     }
+    }
+    
     return std::make_pair(result, diff_QT_values);
   }
   
