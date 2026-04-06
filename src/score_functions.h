@@ -564,7 +564,7 @@ public:
     
     // Composite scoring function
     // we apply a threshold for the p-value?
-    const double P_VALUE_THRESHOLD = -std::log(.075); 
+    const double P_VALUE_THRESHOLD = -std::log(.05); 
     
     
     if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
@@ -700,7 +700,7 @@ public:
     
     // Composite scoring function
     // we apply a threshold for the p-value?
-     const double P_VALUE_THRESHOLD = -std::log(.075); 
+     const double P_VALUE_THRESHOLD = -std::log(.05); 
      
     
      if (-log_p < P_VALUE_THRESHOLD || median_covered <= 0.0 || r_score <= 0.0) {
