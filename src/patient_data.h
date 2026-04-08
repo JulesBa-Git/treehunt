@@ -59,6 +59,10 @@ public:
     const auto& patient_nodes = patient_nodes_[i];
     const auto& upper_bound = tree_.get_upper_bound();
     
+    //if the solution is larger than the patient intake, it can not contain it
+    if(patient_nodes.size() < solution_nodes.size())
+      return false;
+    
     for(int solution_node : solution_nodes){
       bool is_covered = false;
       
