@@ -1181,3 +1181,71 @@ Rcpp::NumericMatrix get_dissimilarity_of_list(
   }
   return results;
 }
+
+//' Temporary helpers : Used to get the takers of a cocktail or cocktail list in
+//' order to get a sense of the used medications as the ndc are mapped to ATC4
+//' @export
+// [[Rcpp::export]]
+Rcpp::List get_taker(
+    Rcpp::List cocktail_list,
+    Rcpp::DataFrame patient_data,
+    SEXP node_column,
+    SEXP target_column,
+    SEXP id_column,
+    SEXP hadm_column,
+    Rcpp::DataFrame tree,
+    SEXP depth_column,
+    SEXP upper_bound_column = R_NilValue,
+    SEXP name_column = R_NilValue
+){
+  
+  tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
+  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
+  
+  std::vector<int> ids = Rcpp::as<std::vector<int>>(
+    patient_data[Rcpp::as<Rcpp::String>(id_column)]
+  );
+  std::vector<int> hadms = Rcpp::as<std::vector<int>>(
+    patient_data[Rcpp::as<Rcpp::String>(hadm_column)]
+  );
+  
+  
+  std::vector<std::set<int>> ids_of_takers;
+  std::vector<std::set<int>> hadm_id_of_takers;
+  std::vector<std::set<int>> idx_of_takers;
+  
+  auto process_data = [&](auto& data) {
+    for(int i = 0; i < cocktail_list.size(); ++i){
+      std::set<int> current_taker_set;
+      std::set<int> current_hadm_set;
+      std::set<int> current_idx_set;
+      std::vector<int> cocktail_crt = Rcpp::as<std::vector<int>>(cocktail_list[i]);
+      
+      for(int j = 0; j < data.size(); ++j){
+        if(data.patient_has_combination(j, cocktail_crt)){
+          current_taker_set.insert(ids[j]);
+          current_hadm_set.insert(hadms[j]);
+          current_idx_set.insert(j + 1);
+        }
+      }
+      ids_of_takers.push_back(std::move(current_taker_set));
+      hadm_id_of_takers.push_back(std::move(current_hadm_set));
+      idx_of_takers.push_back(std::move(current_idx_set));
+    }
+  };
+  
+  if (target_type == TargetTypeDetected::BINARY) {
+    PatientData<int> data(patient_data, node_column, target_column, cppTree);
+    process_data(data);
+  } else {
+    PatientData<double> data(patient_data, node_column, target_column, cppTree);
+    process_data(data);
+  }
+  
+  return Rcpp::List::create(
+    Rcpp::Named("cocktail_list") = cocktail_list,
+    Rcpp::Named("Takers_set") = Rcpp::wrap(ids_of_takers),
+    Rcpp::Named("hadm_set") = Rcpp::wrap(hadm_id_of_takers),
+    Rcpp::Named("idx_set") = Rcpp::wrap(idx_of_takers)
+  );
+}

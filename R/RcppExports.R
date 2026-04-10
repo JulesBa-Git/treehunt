@@ -673,3 +673,10 @@ get_dissimilarity_of_list <- function(cocktail_list, patient_data, node_column, 
     .Call(`_treehunt_get_dissimilarity_of_list`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type)
 }
 
+#' Temporary helpers : Used to get the takers of a cocktail or cocktail list in
+#' order to get a sense of the used medications as the ndc are mapped to ATC4
+#' @export
+get_taker <- function(cocktail_list, patient_data, node_column, target_column, id_column, hadm_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL) {
+    .Call(`_treehunt_get_taker`, cocktail_list, patient_data, node_column, target_column, id_column, hadm_column, tree, depth_column, upper_bound_column, name_column)
+}
+

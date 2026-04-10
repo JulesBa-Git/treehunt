@@ -128,8 +128,9 @@ aggregate_ga_results <- function(folder_path = "results") {
 #' @param new_tree The data frame containing the tree structure and $Name column.
 #' @return The same data frame with a new 'cocktail_names' column.
 map_cocktail_names <- function(aggregated_df, new_tree) {
-  
+  # might change to input string for names and code column name
   node_names <- as.character(new_tree$Name)
+  node_ATC <- as.character(new_tree$Code)
   
   aggregated_df %>%
     mutate(cocktail_names = sapply(cocktail, function(c_string) {
@@ -144,10 +145,18 @@ map_cocktail_names <- function(aggregated_df, new_tree) {
       
       # extract names and join them back
       names_vector <- node_names[r_indices]
-      return(paste(names_vector, collapse = " + "))
+      return(paste(names_vector, collapse = " | "))
+    }),
+    cocktail_codes = sapply(cocktail, function(c_string) {
+      cpp_indices <- as.numeric(unlist(strsplit(c_string, ",")))
+      r_indices <- cpp_indices + 1
+      r_indices <- r_indices[r_indices > 0 & r_indices <= length(node_names)]
+
+      codes_vector <- node_ATC[r_indices]
+      return(paste(codes_vector, collapse = " | "))
     })) %>%
     # Move the new column to a more visible position
-    select(cocktail, cocktail_names, everything())
+    select(cocktail, cocktail_names, cocktail_codes, everything())
 }
 
 #' Process and Attach GA Scores and Statistics (Generic)
