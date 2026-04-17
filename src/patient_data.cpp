@@ -25,7 +25,8 @@ std::vector<int> PatientData<TargetType>::parse_node_string(
 }
 
 template <typename TargetType>
-std::vector<TargetType> PatientData<TargetType>::extract_column(
+template <typename T>
+std::vector<T> PatientData<TargetType>::extract_column(
     const Rcpp::DataFrame& df, SEXP col_target) const{
   SEXP data_col_sexp;
   
@@ -37,10 +38,10 @@ std::vector<TargetType> PatientData<TargetType>::extract_column(
     Rcpp::stop("Column must be specified as a string or integer");
   }
   
-  if constexpr (std::is_same_v<TargetType, int>) {
+  if constexpr (std::is_same_v<T, int>) {
     Rcpp::IntegerVector col_data(data_col_sexp);
     return Rcpp::as<std::vector<int>>(col_data);
-  } else if constexpr (std::is_same_v<TargetType, double>) {
+  } else if constexpr (std::is_same_v<T, double>) {
     Rcpp::NumericVector col_data(data_col_sexp);
     return Rcpp::as<std::vector<double>>(col_data);
   } else {
@@ -50,16 +51,20 @@ std::vector<TargetType> PatientData<TargetType>::extract_column(
 
 template <typename TargetType>
 PatientData<TargetType>::PatientData(const Rcpp::DataFrame& df, SEXP node_column, 
-                                     SEXP target_column, const tree_structure& tree):
-  n_patients_{0}, tree_{tree} {
+                                     SEXP target_column, const tree_structure& tree,
+                                     SEXP id_column):
+  n_patients_{0}, patients_id_{}, tree_{tree} {
   
   if(df.nrows() == 0)
     Rcpp::stop("DataFrame is empty");
   
   n_patients_ = df.nrows();
   
-  targets_ = extract_column(df, target_column);
+  targets_ = extract_column<TargetType>(df, target_column);
   
+  if(id_column != R_NilValue)
+    set_ids(df, id_column);
+    
   SEXP node_col_data;
   if (TYPEOF(node_column) == STRSXP) {
     node_col_data = df[Rcpp::as<Rcpp::String>(node_column)];
@@ -100,6 +105,9 @@ PatientData<TargetType>::PatientData(const Rcpp::DataFrame& df, SEXP node_column
   }
   
 }
+
+
+
 
 template class PatientData<int>;
 template class PatientData<double>;

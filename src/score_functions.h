@@ -11,7 +11,8 @@ enum class ScoreType{
   HYPERGEOMETRIC,
   RELATIVE_RISK,
   WILCOXON,
-  COMPOSITE
+  COMPOSITE,
+  RESIDUALS
 };
 
 template<typename TargetType>
@@ -719,6 +720,135 @@ public:
     return compute_multifactor_risk_QT_with_data(data, solution).score;
   }
   
+  static std::pair<ScoreData, std::vector<double>> 
+    compute_residuals_risk_with_stats(const PatientData<TargetType>& data,
+                                           const Solution& solution,
+                                           bool parallel = true){
+      ScoreData result;
+      result.covered_patients = 0;
+      result.covered_nonzero_target = 0;
+      double noncovered = 0;
+      const auto& nodes = solution.get_nodes();
+      std::vector<double> diff_QT_values;
+      
+      size_t n_total = data.size();
+      std::vector<std::pair<double, int>> combined_vec(n_total);
+      
+      bool use_parallel = parallel && n_total > 1000;
+      double tmp_covered = 0;
+      
+      auto get_median = [](const std::vector<double>& v) {
+        size_t mid = v.size() / 2;
+        return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
+      };
+      
+#ifdef _OPENMP
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered, noncovered)
+#endif
+      for(size_t i = 0; i < n_total; ++i) {
+        bool patient_have_solution = data.patient_has_combination(i, nodes);
+        
+        if(patient_have_solution) {
+          ++tmp_covered;
+          combined_vec[i] = {data.get_target(i), 2};
+        } else {
+          ++noncovered;
+          combined_vec[i] = {data.get_target(i), 1};
+        }
+      }
+      
+      result.covered_patients = tmp_covered;
+      
+      if (result.covered_patients < 1 || noncovered < 1){
+        result.score = 0.0;
+        return std::make_pair(result, std::vector<double>());
+      }
+      
+      std::unordered_map<int, std::vector<double>> taker_map;
+      std::unordered_map<int, std::vector<double>> control_map;
+      
+      for(size_t i = 0; i < combined_vec.size(); ++i){
+        double QT_prolongation = combined_vec[i].first;
+        if(combined_vec[i].second == 1){
+          control_map[data.get_id(i)].push_back(QT_prolongation);
+        }else{
+          taker_map[data.get_id(i)].push_back(QT_prolongation);
+          diff_QT_values.push_back(QT_prolongation);
+        }
+      }
+      
+      //remove takers from the control map
+      for(const auto& [id, qt_vec] : taker_map){
+        control_map.erase(id);
+      }
+      
+      std::vector<double> taker_vec; taker_vec.reserve(taker_map.size());
+      std::vector<double> control_vec; control_vec.reserve(control_map.size());
+      
+      for(const auto& [id, qt_vec] : taker_map)
+        taker_vec.push_back(get_median(qt_vec));
+      for(const auto& [id, qt_vec] : control_map)
+        control_vec.push_back(get_median(qt_vec));
+      
+      std::vector<double> HL_values; 
+      HL_values.reserve(taker_vec.size() * control_vec.size());
+      
+      for(const auto& t_val : taker_vec){
+        for(const auto& c_val: control_vec){
+          HL_values.push_back(t_val - c_val);
+        }
+      }
+      
+      // global sort
+      std::sort(HL_values.begin(), HL_values.end());
+      
+      // Compute the K index in order to obtain 5% LCB of HL estimator
+      double rank_sum1 = 0;
+      double tie_adjustment = 0;
+      double n = static_cast<double>(n_total);
+      
+      size_t i = 0;
+      while (i < n_total) {
+        size_t j = i;
+        while (j + 1 < n_total && combined_vec[j + 1].first == combined_vec[i].first) {
+          j++;
+        }
+        size_t group_size = j - i + 1;
+        if (group_size > 1) {
+          double t = static_cast<double>(group_size);
+          tie_adjustment += (t * t * t - t);
+        }
+        double mid_rank = (static_cast<double>(i + 1) + static_cast<double>(j + 1)) / 2.0;
+        for (size_t k = i; k <= j; ++k) {
+          if (combined_vec[k].second == 1) {
+            rank_sum1 += mid_rank;
+          }
+        }
+        i = j + 1;
+      }
+      
+      double mu_u = (noncovered * result.covered_patients) / 2.0;
+      double var_u = (noncovered * result.covered_patients / (12.0 * n * (n - 1.0))) * ((n * n * n - n) - tie_adjustment);
+      
+      if (var_u <= 0) {
+        result.score = 0.0;
+        return std::make_pair(result, std::vector<double>());
+      }
+      
+      double sigma_u = std::sqrt(var_u);
+      int K = mu_u - 1.96 * sigma_u;
+      
+      if(K >= HL_values.size())
+        result.score = HL_values[K];
+      
+      return std::make_pair(result, diff_QT_values);
+    }
+  
+  static double compute_residuals_risk(const PatientData<TargetType>& data,
+                                       const Solution& solution,
+                                       bool parallel = true){
+    return compute_residuals_risk_with_stats(data, solution).first.score;
+  }
   
 };
 #endif

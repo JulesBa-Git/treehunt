@@ -663,8 +663,8 @@ mcmc_size_2_true_score_distribution <- function(patient_data, node_column, targe
 
 #' Compute score on a list of cocktails
 #' @export
-compute_score <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, score_type = "hypergeometric") {
-    .Call(`_treehunt_compute_score`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, score_type)
+compute_score <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, id_column = NULL, upper_bound_column = NULL, name_column = NULL, score_type = "hypergeometric") {
+    .Call(`_treehunt_compute_score`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, id_column, upper_bound_column, name_column, score_type)
 }
 
 #' Compute the dissimilarity matrix on a list of cocktails

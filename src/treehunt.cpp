@@ -51,7 +51,11 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   }else if (score_type_str == "composite" || score_type_str == "Composite" ||
     score_type_str == "QT") {
     return ScoreType::COMPOSITE;
-  }else {
+  } else if(score_type_str == "residuals" || score_type_str == "RESIDUALS" ||
+    score_type_str == "LMM"){
+    return ScoreType::RESIDUALS;
+  }
+  else {
     Rcpp::stop("Unknown score type: '" + score_type_str + 
       "'. Use one of 'hypergeometric', 'relative_risk', 'wilcoxon'.");
   }
@@ -1067,6 +1071,7 @@ Rcpp::List compute_score(
    SEXP target_column,
    Rcpp::DataFrame tree,
    SEXP depth_column,
+   SEXP id_column = R_NilValue,
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
    std::string score_type = "hypergeometric"
@@ -1114,7 +1119,9 @@ Rcpp::List compute_score(
    }
    
  } else {
-   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   PatientData<double> data(patient_data, node_column, target_column, cppTree, 
+                            id_column);
+   
    for(const auto& solution : sols){
      std::pair<ScoreFunctions<double>::ScoreData,std::vector<double>> score_data;
      switch(Cpp_score_type){
@@ -1123,6 +1130,11 @@ Rcpp::List compute_score(
        break;
      case ScoreType::COMPOSITE :
        score_data = ScoreFunctions<double>::compute_multifactor_risk_QT_with_stats(
+         data, solution
+       );
+       break;
+     case ScoreType::RESIDUALS :
+       score_data = ScoreFunctions<double>::compute_residuals_risk_with_stats(
          data, solution
        );
        break;

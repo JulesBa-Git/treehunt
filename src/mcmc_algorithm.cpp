@@ -84,6 +84,10 @@ MCMCAlgorithm<TargetType>::compute_score(const Solution& sol) const{
     return ScoreFunctions<TargetType>::compute_multifactor_risk_QT_with_data(
       data_, sol);
     
+  case ScoreType::RESIDUALS :
+    return ScoreFunctions<TargetType>::compute_residuals_risk_with_stats(
+      data_, sol).first;
+    
   default:
     Rcpp::stop("Unknown score type");
   

@@ -10,19 +10,23 @@ class PatientData{
 private :
   std::vector<std::vector<int>> patient_nodes_;
   std::vector<TargetType> targets_;
+  // Note: Patients id are only integer for now (should cover most of application),
+  // could be a template ?
+  std::vector<int> patients_id_; 
   size_t n_patients_;
   const tree_structure& tree_;
   
   std::vector<int> parse_node_string(const std::string& node_str) const;
   
-  std::vector<TargetType> extract_column(const Rcpp::DataFrame& df,
-                                         SEXP col_target) const;
+  template <typename T>
+  std::vector<T> extract_column(const Rcpp::DataFrame& df,
+                                SEXP col_target) const;
   
 public:
   PatientData() = delete;
   
   PatientData(const Rcpp::DataFrame& df, SEXP node_column, SEXP target_column,
-              const tree_structure& tree);
+              const tree_structure& tree, SEXP id_column = R_NilValue);
   
   const std::vector<int>& get_patient_nodes(size_t i) const{
     if (i >= n_patients_) {
@@ -35,6 +39,16 @@ public:
     if( i >= n_patients_)
       Rcpp::stop("Patient index out of bounds");
     return targets_[i];
+  }
+  
+  int get_id(size_t i) const{
+    if( i >= n_patients_)
+      Rcpp::stop("Patient index out of bounds");
+    return patients_id_[i];
+  }
+  
+  void set_ids(const Rcpp::DataFrame& df, SEXP id_column){
+    patients_id_ = extract_column<int>(df, id_column);
   }
   
   size_t size() const { return n_patients_; }

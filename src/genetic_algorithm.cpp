@@ -73,6 +73,9 @@ double GeneticAlgorithm<TargetType>::compute_score(const Solution &sol) const {
   case ScoreType::COMPOSITE:
     return ScoreFunctions<TargetType>::compute_multifactor_risk_QT(data_, sol);
 
+  case ScoreType::RESIDUALS:
+    return ScoreFunctions<TargetType>::compute_residuals_risk(data_, sol);
+    
   default:
     Rcpp::stop("Unknown score type");
   }
