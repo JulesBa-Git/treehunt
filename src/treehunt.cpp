@@ -777,6 +777,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
    SEXP depth_column,
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
+   SEXP id_column = R_NilValue,
    Rcpp::Nullable<Rcpp::List> seed_population = R_NilValue,
    size_t population_size = 100,
    size_t epochs = 1000,
@@ -838,11 +839,13 @@ Rcpp::List run_genetic_algorithm_df_tree(
  GAResults results;
 
  if (target_type == TargetTypeDetected::BINARY) {
-   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   PatientData<int> data(patient_data, node_column, target_column, cppTree, 
+                            id_column);
    GeneticAlgorithm<int> algorithm(data, params, seed_population);
    results = algorithm.run();
  } else {
-   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   PatientData<double> data(patient_data, node_column, target_column, cppTree, 
+                            id_column);
    GeneticAlgorithm<double> algorithm(data, params, seed_population);
    results = algorithm.run();
  }

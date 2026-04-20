@@ -727,7 +727,7 @@ public:
       ScoreData result;
       result.covered_patients = 0;
       result.covered_nonzero_target = 0;
-      double noncovered = 0;
+      double tmp_covered = 0;
       const auto& nodes = solution.get_nodes();
       std::vector<double> diff_QT_values;
       
@@ -735,7 +735,6 @@ public:
       std::vector<std::pair<double, int>> combined_vec(n_total);
       
       bool use_parallel = parallel && n_total > 1000;
-      double tmp_covered = 0;
       
       auto get_median = [](const std::vector<double>& v) {
         size_t mid = v.size() / 2;
@@ -743,23 +742,19 @@ public:
       };
       
 #ifdef _OPENMP
-#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered, noncovered)
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered)
 #endif
       for(size_t i = 0; i < n_total; ++i) {
         bool patient_have_solution = data.patient_has_combination(i, nodes);
-        
         if(patient_have_solution) {
           ++tmp_covered;
           combined_vec[i] = {data.get_target(i), 2};
         } else {
-          ++noncovered;
           combined_vec[i] = {data.get_target(i), 1};
         }
       }
       
-      result.covered_patients = tmp_covered;
-      
-      if (result.covered_patients < 1 || noncovered < 1){
+      if (tmp_covered < 1 ){
         result.score = 0.0;
         return std::make_pair(result, std::vector<double>());
       }
@@ -799,36 +794,18 @@ public:
         }
       }
       
+      result.covered_patients = taker_vec.size();
+      double noncovered = control_vec.size();
       // global sort
       std::sort(HL_values.begin(), HL_values.end());
       
       // Compute the K index in order to obtain 5% LCB of HL estimator
-      double rank_sum1 = 0;
-      double tie_adjustment = 0;
-      double n = static_cast<double>(n_total);
-      
-      size_t i = 0;
-      while (i < n_total) {
-        size_t j = i;
-        while (j + 1 < n_total && combined_vec[j + 1].first == combined_vec[i].first) {
-          j++;
-        }
-        size_t group_size = j - i + 1;
-        if (group_size > 1) {
-          double t = static_cast<double>(group_size);
-          tie_adjustment += (t * t * t - t);
-        }
-        double mid_rank = (static_cast<double>(i + 1) + static_cast<double>(j + 1)) / 2.0;
-        for (size_t k = i; k <= j; ++k) {
-          if (combined_vec[k].second == 1) {
-            rank_sum1 += mid_rank;
-          }
-        }
-        i = j + 1;
-      }
-      
+      // Note : there's no need to adjust for ties since we are using the 
+      // residuals, ties are very unlikely to happen
       double mu_u = (noncovered * result.covered_patients) / 2.0;
-      double var_u = (noncovered * result.covered_patients / (12.0 * n * (n - 1.0))) * ((n * n * n - n) - tie_adjustment);
+      
+      double var_u = (noncovered * result.covered_patients * 
+                      (noncovered + result.covered_patients + 1)) / 12.0;
       
       if (var_u <= 0) {
         result.score = 0.0;
@@ -839,8 +816,12 @@ public:
       int K = mu_u - 1.96 * sigma_u;
       
       if(K >= HL_values.size())
-        result.score = HL_values[K];
-      
+        result.score = 0.0;
+      else if(K < 0)
+        K = 0;
+        
+      //maybe we shouldn't shrink to 0 as negative values are informative
+      result.score = HL_values[K] >= 0 ? HL_values[K] : 0.0;
       return std::make_pair(result, diff_QT_values);
     }
   
