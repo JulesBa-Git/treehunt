@@ -820,8 +820,8 @@ public:
       else if(K < 0)
         K = 0;
         
-      //maybe we shouldn't shrink to 0 as negative values are informative
-      result.score = HL_values[K] >= 0 ? HL_values[K] : 0.0;
+      
+      result.score = HL_values[K];
       return std::make_pair(result, diff_QT_values);
     }
   
