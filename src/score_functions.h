@@ -822,8 +822,9 @@ public:
       if(K < 0){
         K = 0;
       }
-        
-      result.score = HL_values[K];
+      
+      // We add a regularization parameter on the cocktail size
+      result.score = HL_values[K] * std::exp(-0.15 * static_cast<double>(solution.size()));
       return std::make_pair(result, diff_QT_values);
     }
   
