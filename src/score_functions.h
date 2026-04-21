@@ -815,12 +815,14 @@ public:
       double sigma_u = std::sqrt(var_u);
       int K = mu_u - 1.96 * sigma_u;
       
-      if(K >= HL_values.size())
+      if(K >= HL_values.size()){
         result.score = 0.0;
-      else if(K < 0)
-        K = 0;
-        
+      }
       
+      if(K < 0){
+        K = 0;
+      }
+        
       result.score = HL_values[K];
       return std::make_pair(result, diff_QT_values);
     }
