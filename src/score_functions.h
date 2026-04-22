@@ -824,7 +824,7 @@ public:
       }
       
       // We add a regularization parameter on the cocktail size
-      result.score = HL_values[K] * std::exp(-0.15 * static_cast<double>(solution.size()));
+      result.score = HL_values[K] * std::exp(-0.25 * static_cast<double>(solution.size()));
       return std::make_pair(result, diff_QT_values);
     }
   
