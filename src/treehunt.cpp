@@ -54,6 +54,9 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   } else if(score_type_str == "residuals" || score_type_str == "RESIDUALS" ||
     score_type_str == "LMM"){
     return ScoreType::RESIDUALS;
+  } else if(score_type_str == "bootstrap" || score_type_str == "BOOTSTRAP" ||
+    score_type_str == "Boot"){
+    return ScoreType::BOOTSTRAP;
   }
   else {
     Rcpp::stop("Unknown score type: '" + score_type_str + 
@@ -1138,6 +1141,11 @@ Rcpp::List compute_score(
        break;
      case ScoreType::RESIDUALS :
        score_data = ScoreFunctions<double>::compute_residuals_risk_with_stats(
+         data, solution
+       );
+       break;
+     case ScoreType::BOOTSTRAP : 
+       score_data = ScoreFunctions<double>::compute_residuals_risk_bootstrap_with_stats(
          data, solution
        );
        break;

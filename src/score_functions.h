@@ -4,6 +4,7 @@
 #include <Rcpp.h>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 #include "solution.h"
 #include "patient_data.h"
 
@@ -12,7 +13,8 @@ enum class ScoreType{
   RELATIVE_RISK,
   WILCOXON,
   COMPOSITE,
-  RESIDUALS
+  RESIDUALS,
+  BOOTSTRAP
 };
 
 template<typename TargetType>
@@ -324,7 +326,8 @@ public:
     
     double log_p= R::pnorm(Z, 0.0, 1.0, true, true);
     
-    result.score = -log_p;
+    // here we try with the ratio of sqrt(covered)
+    result.score = -log_p / std::sqrt(result.covered_patients);
     return result;
   }
   
@@ -437,7 +440,7 @@ public:
     
     double log_p= R::pnorm(Z, 0.0, 1.0, true, true);
     
-    result.score = -log_p;
+    result.score = -log_p / std::sqrt(result.covered_patients);
     return std::make_pair(result, diff_QT_values);
   }
   
@@ -833,6 +836,123 @@ public:
                                        bool parallel = true){
     return compute_residuals_risk_with_stats(data, solution).first.score;
   }
+  
+  static std::pair<ScoreData, std::vector<double>> 
+    compute_residuals_risk_bootstrap_with_stats(const PatientData<TargetType>& data,
+                                      const Solution& solution,
+                                      bool parallel = true){
+      ScoreData result;
+      result.covered_patients = 0;
+      result.covered_nonzero_target = 0;
+      double tmp_covered = 0;
+      const auto& nodes = solution.get_nodes();
+      std::vector<double> diff_QT_values;
+      
+      size_t n_total = data.size();
+      std::vector<std::pair<double, int>> combined_vec(n_total);
+      
+      bool use_parallel = parallel && n_total > 1000;
+      
+      auto get_median = [](const std::vector<double>& v) {
+        size_t mid = v.size() / 2;
+        return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
+      };
+      
+#ifdef _OPENMP
+#pragma omp parallel for if(use_parallel) reduction(+:tmp_covered)
+#endif
+      for(size_t i = 0; i < n_total; ++i) {
+        bool patient_have_solution = data.patient_has_combination(i, nodes);
+        if(patient_have_solution) {
+          ++tmp_covered;
+          combined_vec[i] = {data.get_target(i), 2};
+        } else {
+          combined_vec[i] = {data.get_target(i), 1};
+        }
+      }
+      
+      if (tmp_covered < 1 ){
+        result.score = 0.0;
+        return std::make_pair(result, std::vector<double>());
+      }
+      
+      std::unordered_map<int, std::vector<double>> taker_map;
+      std::unordered_map<int, std::vector<double>> control_map;
+      
+      for(size_t i = 0; i < combined_vec.size(); ++i){
+        double QT_prolongation = combined_vec[i].first;
+        if(combined_vec[i].second == 1){
+          control_map[data.get_id(i)].push_back(QT_prolongation);
+        }else{
+          taker_map[data.get_id(i)].push_back(QT_prolongation);
+          diff_QT_values.push_back(QT_prolongation);
+        }
+      }
+      
+      //remove takers from the control map
+      for(const auto& [id, qt_vec] : taker_map){
+        control_map.erase(id);
+      }
+      
+      std::vector<double> taker_vec; taker_vec.reserve(taker_map.size());
+      std::vector<double> control_vec; control_vec.reserve(control_map.size());
+      
+      for(const auto& [id, qt_vec] : taker_map)
+        taker_vec.push_back(get_median(qt_vec));
+      for(const auto& [id, qt_vec] : control_map)
+        control_vec.push_back(get_median(qt_vec));
+      
+      std::vector<double> HL_values; 
+      HL_values.reserve(2000);
+      //bootstrapping here
+      for(int B = 0 ; B < 2000 ; ++B){
+        int control_size = std::min(static_cast<int>(control_vec.size()), 1000);
+        std::vector<int> taker_sample; taker_sample.reserve(taker_vec.size());
+        std::vector<int> control_sample; control_sample.reserve(control_size);
+        std::vector<double> HL_bootstrap; HL_bootstrap.reserve(control_size * taker_vec.size());
+        
+        std::random_device rd; 
+        std::mt19937 gen(rd()); 
+        
+        std::uniform_int_distribution<> distrib_taker(0, taker_vec.size() - 1);
+        std::uniform_int_distribution<> distrib_control(0, control_size - 1);
+        
+        for(int i = 0; i < taker_vec.size(); ++i){
+          int random_index = distrib_taker(gen);
+          taker_sample.push_back(taker_vec[random_index]);
+        }
+        for(int i = 0; i < control_size; ++i){
+          int random_index = distrib_taker(gen);
+          control_sample.push_back(control_vec[random_index]);
+        }
+        
+        for(const auto& t_val : taker_sample){
+          for(const auto& c_val: control_sample){
+            HL_bootstrap.push_back(t_val - c_val);
+          }
+        }
+        HL_values.push_back(get_median(HL_bootstrap));
+      }
+      
+      
+      
+      result.covered_patients = taker_vec.size();
+      // global sort
+      std::sort(HL_values.begin(), HL_values.end());
+      
+      // We take the 5% percentile of the vector which is the value at index 100 
+      // since the vector is sorted
+      // We add a regularization parameter on the cocktail size
+      result.score = HL_values[100] * std::exp(-0.20 * static_cast<double>(solution.size()));
+      return std::make_pair(result, diff_QT_values);
+    }
+  
+  static double compute_residuals_risk_bootstrap(const PatientData<TargetType>& data,
+                                       const Solution& solution,
+                                       bool parallel = true){
+    return compute_residuals_risk_bootstrap_with_stats(data, solution).first.score;
+  }
+  
   
 };
 #endif
