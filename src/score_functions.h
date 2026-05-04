@@ -231,8 +231,14 @@ public:
     double noncovered = 0;
     const auto& nodes = solution.get_nodes();
     
+    auto get_median = [](const std::vector<double>& v) {
+      size_t mid = v.size() / 2;
+      return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
+    };
+    
+    
     //vector of pair <value, group>
-    std::vector<std::pair<double,int>> combined_vec(data.size());
+    std::vector<std::pair<double,int>> regrouped_vec(data.size());
     
     bool use_parallel = parallel && data.size() > 1000;
     double tmp_covered = 0;
@@ -245,25 +251,53 @@ public:
       
       if(patient_have_solution){
         ++tmp_covered;
-        combined_vec[i] = {data.get_target(i), 2};
+        regrouped_vec[i] = {data.get_target(i), 2};
       }else{
         ++noncovered;
-        combined_vec[i] = {data.get_target(i), 1};
+        regrouped_vec[i] = {data.get_target(i), 1};
       }
     }
     
-    result.covered_patients = tmp_covered;
-    
-    if (result.covered_patients == 0 || noncovered < 1){
+    if (tmp_covered == 0 || noncovered < 1){
       result.score = 0.0;
       return result;
     }
     
+    
+    std::unordered_map<int, std::vector<double>> taker_map;
+    std::unordered_map<int, std::vector<double>> control_map;
+    
+    for(size_t i = 0; i < regrouped_vec.size(); ++i){
+      double QT_prolongation = regrouped_vec[i].first;
+      if(regrouped_vec[i].second == 1){
+        control_map[data.get_id(i)].push_back(QT_prolongation);
+      }else{
+        taker_map[data.get_id(i)].push_back(QT_prolongation);
+      }
+    }
+    
+    //remove takers from the control map
+    for(const auto& [id, qt_vec] : taker_map){
+      control_map.erase(id);
+    }
+    
+    std::vector<std::pair<double,int>> combined_vec;
+    combined_vec.reserve(taker_map.size() + control_map.size());
+    
+    for(const auto& [id, qt_vec] : taker_map)
+      combined_vec.emplace_back(get_median(qt_vec), 2);
+    for(const auto& [id, qt_vec] : control_map)
+      combined_vec.emplace_back(get_median(qt_vec), 1);
+    
+    
     std::sort(combined_vec.begin(), combined_vec.end(), 
-              [](const std::pair<double, int>& p1, const std::pair<double, int>& p2){
+              [](const std::pair<double, int>& p1,
+                 const std::pair<double, int>& p2){
                 return p1.first < p2.first;
               });
     
+    result.covered_patients = taker_map.size();
+    noncovered = control_map.size();
     // Handle 0 ties when the QT before the medication intake is the first/only 
     // one available
     double rank_sum1 = 0;
@@ -342,11 +376,16 @@ public:
     result.covered_nonzero_target = 0;
     double noncovered = 0;
     std::vector<double> diff_QT_values;
+    auto get_median = [](const std::vector<double>& v) {
+      size_t mid = v.size() / 2;
+      return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
+    };
+    
     
     const auto& nodes = solution.get_nodes();
     
     //vector of pair <value, group>
-    std::vector<std::pair<double,int>> combined_vec(data.size());
+    std::vector<std::pair<double,int>> regrouped_vec(data.size());
     
     bool use_parallel = parallel && data.size() > 1000;
     double tmp_covered = 0;
@@ -359,19 +398,45 @@ public:
       
       if(patient_have_solution){
         ++tmp_covered;
-        combined_vec[i] = {data.get_target(i), 2};
+        regrouped_vec[i] = {data.get_target(i), 2};
       }else{ 
         ++noncovered;
-        combined_vec[i] = {data.get_target(i), 1};
+        regrouped_vec[i] = {data.get_target(i), 1};
       }
     }
-    
-    result.covered_patients = tmp_covered;
 
-    if (result.covered_patients == 0 || noncovered < 1){
+    if (tmp_covered == 0 || noncovered < 1){
       result.score = 0.0;
       return std::make_pair(result, std::vector<double>());
     }
+    
+    std::unordered_map<int, std::vector<double>> taker_map;
+    std::unordered_map<int, std::vector<double>> control_map;
+    
+    for(size_t i = 0; i < regrouped_vec.size(); ++i){
+      double QT_prolongation = regrouped_vec[i].first;
+      if(regrouped_vec[i].second == 1){
+        control_map[data.get_id(i)].push_back(QT_prolongation);
+      } else {
+        taker_map[data.get_id(i)].push_back(QT_prolongation);
+      }
+    }
+    
+    //remove takers from the control map
+    for(const auto& [id, qt_vec] : taker_map){
+      control_map.erase(id);
+    }
+    
+    std::vector<std::pair<double,int>> combined_vec;
+    combined_vec.reserve(taker_map.size() + control_map.size());
+    
+    for(const auto& [id, qt_vec] : taker_map)
+      combined_vec.emplace_back(get_median(qt_vec), 2);
+    for(const auto& [id, qt_vec] : control_map)
+      combined_vec.emplace_back(get_median(qt_vec), 1);
+    
+    result.covered_patients = taker_map.size();
+    noncovered = control_map.size();
     
     for(const auto& [diff, group] : combined_vec){
       if(group == 2)
@@ -379,7 +444,8 @@ public:
     }
     
     std::sort(combined_vec.begin(), combined_vec.end(), 
-              [](const std::pair<double, int>& p1, const std::pair<double, int>& p2){
+              [](const std::pair<double, int>& p1,
+                 const std::pair<double, int>& p2){
                 return p1.first < p2.first;
               });
     
@@ -438,7 +504,7 @@ public:
     
     double Z = corrected_diff / sigma_u;
     
-    double log_p= R::pnorm(Z, 0.0, 1.0, true, true);
+    double log_p = R::pnorm(Z, 0.0, 1.0, true, true);
     
     result.score = -log_p / std::sqrt(result.covered_patients);
     return std::make_pair(result, diff_QT_values);
