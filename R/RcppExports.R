@@ -482,8 +482,8 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
 #' }
 #'
 #' @export
-run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, epochs = 1e6L, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE) {
-    .Call(`_treehunt_run_mcmc_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
+run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, epochs = 1e6L, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE) {
+    .Call(`_treehunt_run_mcmc_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
 }
 
 #' Run Genetic Algorithm for High Score Nodes Combination Search
@@ -657,8 +657,8 @@ run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_colu
 #' }
 #'
 #' @export
-mcmc_size_2_true_score_distribution <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, beta = 4L, max_score = 200.0, score_type = "hypergeometric") {
-    .Call(`_treehunt_mcmc_size_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type)
+mcmc_size_2_true_score_distribution <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, beta = 4L, max_score = 200.0, score_type = "hypergeometric") {
+    .Call(`_treehunt_mcmc_size_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, beta, max_score, score_type)
 }
 
 #' Compute score on a list of cocktails

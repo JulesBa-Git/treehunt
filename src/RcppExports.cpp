@@ -440,8 +440,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // run_mcmc_df_tree
-Rcpp::List run_mcmc_df_tree(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, size_t epochs, double temperature, size_t n_results, size_t cocktail_size, double prob_type1, size_t beta, double max_score, std::string score_type, bool verbose);
-RcppExport SEXP _treehunt_run_mcmc_df_tree(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP epochsSEXP, SEXP temperatureSEXP, SEXP n_resultsSEXP, SEXP cocktail_sizeSEXP, SEXP prob_type1SEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP score_typeSEXP, SEXP verboseSEXP) {
+Rcpp::List run_mcmc_df_tree(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, SEXP id_column, size_t epochs, double temperature, size_t n_results, size_t cocktail_size, double prob_type1, size_t beta, double max_score, std::string score_type, bool verbose);
+RcppExport SEXP _treehunt_run_mcmc_df_tree(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP id_columnSEXP, SEXP epochsSEXP, SEXP temperatureSEXP, SEXP n_resultsSEXP, SEXP cocktail_sizeSEXP, SEXP prob_type1SEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP score_typeSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -452,6 +452,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
     Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
     Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
     Rcpp::traits::input_parameter< size_t >::type epochs(epochsSEXP);
     Rcpp::traits::input_parameter< double >::type temperature(temperatureSEXP);
     Rcpp::traits::input_parameter< size_t >::type n_results(n_resultsSEXP);
@@ -461,7 +462,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type max_score(max_scoreSEXP);
     Rcpp::traits::input_parameter< std::string >::type score_type(score_typeSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_mcmc_df_tree(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose));
+    rcpp_result_gen = Rcpp::wrap(run_mcmc_df_tree(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -496,8 +497,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_size_2_true_score_distribution
-Rcpp::List mcmc_size_2_true_score_distribution(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, size_t beta, double max_score, std::string score_type);
-RcppExport SEXP _treehunt_mcmc_size_2_true_score_distribution(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP score_typeSEXP) {
+Rcpp::List mcmc_size_2_true_score_distribution(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, SEXP id_column, size_t beta, double max_score, std::string score_type);
+RcppExport SEXP _treehunt_mcmc_size_2_true_score_distribution(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP id_columnSEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP score_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -508,10 +509,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
     Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
     Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
     Rcpp::traits::input_parameter< size_t >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< double >::type max_score(max_scoreSEXP);
     Rcpp::traits::input_parameter< std::string >::type score_type(score_typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(mcmc_size_2_true_score_distribution(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, beta, max_score, score_type));
+    rcpp_result_gen = Rcpp::wrap(mcmc_size_2_true_score_distribution(patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, beta, max_score, score_type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -610,9 +612,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_tree_info", (DL_FUNC) &_treehunt_test_tree_info, 1},
     {"_treehunt_run_mcmc", (DL_FUNC) &_treehunt_run_mcmc, 13},
     {"_treehunt_run_genetic_algorithm", (DL_FUNC) &_treehunt_run_genetic_algorithm, 16},
-    {"_treehunt_run_mcmc_df_tree", (DL_FUNC) &_treehunt_run_mcmc_df_tree, 16},
+    {"_treehunt_run_mcmc_df_tree", (DL_FUNC) &_treehunt_run_mcmc_df_tree, 17},
     {"_treehunt_run_genetic_algorithm_df_tree", (DL_FUNC) &_treehunt_run_genetic_algorithm_df_tree, 20},
-    {"_treehunt_mcmc_size_2_true_score_distribution", (DL_FUNC) &_treehunt_mcmc_size_2_true_score_distribution, 10},
+    {"_treehunt_mcmc_size_2_true_score_distribution", (DL_FUNC) &_treehunt_mcmc_size_2_true_score_distribution, 11},
     {"_treehunt_compute_score", (DL_FUNC) &_treehunt_compute_score, 10},
     {"_treehunt_get_dissimilarity_of_list", (DL_FUNC) &_treehunt_get_dissimilarity_of_list, 9},
     {"_treehunt_get_taker", (DL_FUNC) &_treehunt_get_taker, 10},

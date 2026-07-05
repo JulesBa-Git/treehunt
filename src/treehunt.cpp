@@ -600,6 +600,7 @@ Rcpp::List run_mcmc_df_tree(
    SEXP depth_column,
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
+   SEXP id_column = R_NilValue,
    size_t epochs = 1e6,
    double temperature = 1.0,
    size_t n_results = 10,
@@ -647,11 +648,13 @@ Rcpp::List run_mcmc_df_tree(
  MCMCResults results;
  
  if (target_type == TargetTypeDetected::BINARY) {
-   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   PatientData<int> data(patient_data, node_column, target_column, cppTree,
+                         id_column);
    MCMCAlgorithm<int> algorithm(data, params);
    results = algorithm.run();
  } else {
-   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   PatientData<double> data(patient_data, node_column, target_column, cppTree,
+                            id_column);
    MCMCAlgorithm<double> algorithm(data, params);
    results = algorithm.run();
  }
@@ -989,6 +992,7 @@ Rcpp::List mcmc_size_2_true_score_distribution(
    SEXP depth_column,
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
+   SEXP id_column = R_NilValue,
    size_t beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric") {
@@ -1017,11 +1021,12 @@ Rcpp::List mcmc_size_2_true_score_distribution(
  MCMCResults results;
  
  if (target_type == TargetTypeDetected::BINARY) {
-   PatientData<int> data(patient_data, node_column, target_column, cppTree);
+   PatientData<int> data(patient_data, node_column, target_column, cppTree, id_column);
    MCMCAlgorithm<int> algorithm(data, params);
    results = algorithm.true_size2_distribution();
  } else {
-   PatientData<double> data(patient_data, node_column, target_column, cppTree);
+   PatientData<double> data(patient_data, node_column, target_column, cppTree,
+                            id_column);
    MCMCAlgorithm<double> algorithm(data, params);
    results = algorithm.true_size2_distribution();
  }
