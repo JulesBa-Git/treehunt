@@ -9,6 +9,7 @@
 #include <utility>
 #include "solution.h"
 #include "patient_data.h"
+#include "pwp_score.h"
 #include "score_functions.h"
 
 // Parameters structure for MCMC
@@ -22,11 +23,12 @@ struct MCMCParams {
   double max_score;         
   ScoreType score_type_;
   bool verbose;
+  int seed;
   
   MCMCParams() : epochs(10000), temperature(1.0), n_results(10), 
   cocktail_size(3), prob_mutation_type1(0.5), 
   beta(5), max_score(100.0), score_type_(ScoreType::HYPERGEOMETRIC),
-  verbose(false) {}
+  verbose(false), seed(-1) {}
 };
 
 // Results structure
@@ -68,6 +70,7 @@ template<typename TargetType>
 class MCMCAlgorithm {
 private:
   const PatientData<TargetType>& data_;
+  const PWPScoreContext *pwp_context_;
   MCMCParams params_;
   std::mt19937 rng_;
   MCMCResults results_;
@@ -109,7 +112,8 @@ private:
   
 public:
   MCMCAlgorithm(const PatientData<TargetType>& data,
-                const MCMCParams& params);
+                const MCMCParams& params,
+                const PWPScoreContext *pwp_context = nullptr);
   
   MCMCResults run();
   MCMCResults true_size2_distribution();

@@ -2,6 +2,7 @@
 #define GENETIC_ALGORITHM_H
 
 #include "helpers.h"
+#include "pwp_score.h"
 #include "score_functions.h"
 #include "solution.h"
 #include <memory>
@@ -26,12 +27,13 @@ struct GAParams {
   ScoreType score_type;
   bool diversity;
   bool verbose;
+  int seed;
 
   GAParams()
       : population_size(100), epochs(1000), mutation_rate(0.1),
         prob_mutation_type1(0.5), crossover_rate(0.8), elite_count(10),
         tournament_size(3), alpha(1.0), score_type(ScoreType::HYPERGEOMETRIC),
-        diversity(false), verbose(false) {}
+        diversity(false), verbose(false), seed(-1) {}
 };
 
 struct GAResults {
@@ -48,6 +50,7 @@ private:
   std::vector<Solution> population_;
   std::unordered_map<Solution, double, SolutionHash> score_hash_map_;
   const PatientData<TargetType> &data_;
+  const PWPScoreContext *pwp_context_;
   GAParams params_;
   mutable std::mt19937 rng_; // concurrency not really possible here
   // tracking of cache_hits
@@ -57,7 +60,8 @@ public:
   GeneticAlgorithm() = delete;
   GeneticAlgorithm(
       const PatientData<TargetType> &data, const GAParams &params,
-      const Rcpp::Nullable<Rcpp::List> &seed_population = R_NilValue);
+      const Rcpp::Nullable<Rcpp::List> &seed_population = R_NilValue,
+      const PWPScoreContext *pwp_context = nullptr);
 
   void initialize();
 

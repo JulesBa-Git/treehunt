@@ -151,6 +151,46 @@ atc_data$depth <- case_when(
 )
 ```
 
+## PWP Cox Rao searches
+
+`treehunt` can rank hierarchical code combinations for recurrent-event data
+with an exact Efron score test from a stratified PWP gap-time Cox model. Fit the
+reduced model once, then reuse its context throughout the search:
+
+```r
+context <- fit_pwp_rao_context(
+  data = pwp_data,
+  status_column = "status_any", # or "status_emergency"
+  covariates = c("age_start", "index_emergency", "year_start"),
+  min_covered_patients = 20L,
+  min_covered_events = 5L
+)
+
+ga <- run_pwp_genetic_algorithm(
+  data = pwp_data,
+  context = context,
+  tree = icd10_tree,
+  node_column = "icd10_indices",
+  seed = 20260816L
+)
+
+details <- score_pwp_combinations(
+  combinations = ga$final_population,
+  data = pwp_data,
+  context = context,
+  tree = icd10_tree,
+  index_base = 0L
+)
+```
+
+The interval list-column and tree `UpperBound` must both use zero-based node
+indexes. In particular, when a CSV stores an inclusive one-based subtree bound,
+use `UpperBound <- UpperBound - 1L`. The screening fitness is
+`max(0, signed_z)`; `details` retains the signed Rao statistic, model-based
+p-value, coverage counts, and efficient information. Use
+`refit_pwp_combinations()` to obtain patient-clustered robust Cox estimates for
+the selected candidates.
+
 ## 📈 Output Structure
 
 ### MCMC Results

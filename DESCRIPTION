@@ -4,6 +4,8 @@ Title: Evolutionary Search for Optimal Node Combinations in Tree
 Version: 0.0.1
 Date: 2025-11-05
 Authors@R: person("Jules", "Bangard", role = c("aut", "cre"), email = "jules.bangard@etu.unistra.fr")
+Author: Jules Bangard [aut, cre]
+Maintainer: Jules Bangard <jules.bangard@etu.unistra.fr>
 Description: Implements hybrid evolutionary Markov Chain Monte Carlo (MCMC) and 
     genetic algorithm methods to search through hierarchical tree structures for 
     node combinations that optimize user-defined criteria. Originally developed 
@@ -12,7 +14,7 @@ Description: Implements hybrid evolutionary Markov Chain Monte Carlo (MCMC) and
     to any tree hierarchy and optimization metric. Efficient C++ implementation 
     via 'Rcpp' enables exploration of large combinatorial spaces.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.1.0), jsonlite
+Imports: Rcpp (>= 1.1.0), jsonlite, survival
 LinkingTo: Rcpp
 Encoding: UTF-8
 RoxygenNote: 7.3.2

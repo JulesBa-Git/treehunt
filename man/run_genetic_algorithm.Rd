@@ -9,6 +9,7 @@ run_genetic_algorithm(
   node_column,
   target_column,
   tree_depth,
+  seed_population = NULL,
   population_size = 100L,
   epochs = 1000L,
   mutation_rate = 0.1,
@@ -29,7 +30,7 @@ a node column and a target column.}
 \item{node_column}{Either a string (column name) or integer (column index, 1-based)
 specifying the column containing node indexes. This column should be either:
 \itemize{
-  \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+  \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
   \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 }}
 
@@ -40,6 +41,13 @@ numeric values with non-0/1 entries are treated as continuous.}
 \item{tree_depth}{An integer vector specifying the depth of each node in the
 tree structure. Must start at depth 1 and children must be at depth+1 of
 their parent.}
+
+\item{seed_population}{A \code{list} of integer vectors representing an initial
+population (vector of 1-based tree index). If provided, these individuals
+will be included in the first generation . If the list contains fewer
+individuals than \code{population_size}, the remainder will be initialized
+randomly. If \code{NULL} (the default), the entire initial population
+is generated randomly.}
 
 \item{population_size}{Number of solutions in the population. Default: 100.}
 
@@ -63,8 +71,8 @@ Default: 2.}
 favor adding nodes. Default: 1.0.}
 
 \item{score_type}{Scoring function to use. Either "hypergeometric" for the
-hypergeometric test or "relative_risk" for relative risk calculation.
-Default: "hypergeometric".}
+hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+for the wilcoxon test with continuous output.}
 
 \item{diversity}{If TRUE, applies a diversity penalty to encourage exploration
 of different solutions. Default: FALSE.}
@@ -100,6 +108,36 @@ solutions that have been seen before (identified by hash).
 
 When \code{diversity = TRUE}, solutions are penalized based on their similarity
 to other solutions in the population, encouraging exploration of diverse regions.
+}
+\examples{
+\dontrun{
+# Create example data
+patient_df <- data.frame(
+  patient_id = 1:100,
+  outcome = rbinom(100, 1, 0.3)
+)
+patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+
+# Define tree structure
+tree_depth <- c(1, rep(2, 5), rep(3, 15))
+
+# Run GA
+results <- run_genetic_algorithm(
+  patient_data = patient_df,
+  node_column = "drugs",
+  target_column = "outcome",
+  tree_depth = tree_depth,
+  population_size = 50,
+  epochs = 500,
+  score_type = "hypergeometric",
+  verbose = TRUE
+)
+
+# View top results
+print(results$top_scores)
+print(results$top_solutions)
+}
+
 }
 \seealso{
 \code{\link{run_mcmc}} for an MCMC-based optimization approach

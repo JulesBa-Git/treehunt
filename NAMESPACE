@@ -1,3 +1,4 @@
 useDynLib(treehunt, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
+S3method(print,pwp_rao_context)
 exportPattern("^[[:alpha:]]+")

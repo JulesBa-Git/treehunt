@@ -2,23 +2,26 @@
 
 template<typename TargetType>
 MCMCAlgorithm<TargetType>::MCMCAlgorithm(const PatientData<TargetType>& data,
-                                         const MCMCParams& params)
-  : data_{data}, params_{params},
+                                         const MCMCParams& params,
+                                         const PWPScoreContext *pwp_context)
+  : data_{data}, pwp_context_{pwp_context}, params_{params},
     min_score_(0.0), min_score_filtered_(0.0) {
   
   size_t n_bins = static_cast<size_t>(params_.max_score * 10) + 1;
   results_.score_distribution.resize(n_bins, 0);
   results_.score_distribution_filtered.resize(n_bins, 0);
   results_.cocktail_size = params_.cocktail_size;
-  std::random_device rd;
-  std::vector<unsigned int> seed_data;
-  for (int i = 0; i < 4; ++i) {
-    seed_data.push_back(rd());
+  if (params.seed >= 0) {
+    rng_ = std::mt19937(static_cast<unsigned int>(params.seed));
+  } else {
+    std::random_device rd;
+    std::vector<unsigned int> seed_data;
+    for (int i = 0; i < 4; ++i) {
+      seed_data.push_back(rd());
+    }
+    std::seed_seq seq(seed_data.begin(), seed_data.end());
+    rng_ = std::mt19937(seq);
   }
-  
-  std::seed_seq seq(seed_data.begin(), seed_data.end());
-  
-  rng_ = std::mt19937(seq);
 }
 
 template<typename TargetType>
@@ -87,6 +90,17 @@ MCMCAlgorithm<TargetType>::compute_score(const Solution& sol) const{
   case ScoreType::RESIDUALS :
     return ScoreFunctions<TargetType>::compute_residuals_risk_with_stats(
       data_, sol).first;
+
+  case ScoreType::PWP_RAO : {
+    if (pwp_context_ == nullptr)
+      Rcpp::stop("PWP Rao scoring requires a PWP score context.");
+    const auto pwp = pwp_context_->compute(sol);
+    typename ScoreFunctions<TargetType>::ScoreData out;
+    out.score = pwp.fitness;
+    out.covered_patients = pwp.covered_patients;
+    out.covered_nonzero_target = pwp.covered_events;
+    return out;
+  }
     
   default:
     Rcpp::stop("Unknown score type");

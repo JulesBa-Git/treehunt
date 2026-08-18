@@ -59,7 +59,8 @@ be included in the filtered results. Default: 4.}
 Scores above this are tracked separately. Default: 200.0.}
 
 \item{score_type}{Scoring function to use. Either "hypergeometric" for the
-hypergeometric test or "relative_risk" for relative risk calculation.
+hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+for the wilcoxon test with continuous output.
 Default: "hypergeometric".}
 
 \item{verbose}{If TRUE, prints progress and statistics during the run.
@@ -96,7 +97,7 @@ The acceptance probability for Type 1 proposal is:
 \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 
 For Type 2 proposals, a proposal ratio correction is applied since the ratio
-of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+of P(current | proposed) != P(proposed | current):
 \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 
 where \eqn{|V|} is the number of possible swap vertices for a solution.

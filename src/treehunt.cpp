@@ -57,6 +57,9 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   } else if(score_type_str == "bootstrap" || score_type_str == "BOOTSTRAP" ||
     score_type_str == "Boot"){
     return ScoreType::BOOTSTRAP;
+  } else if(score_type_str == "pwp_rao" || score_type_str == "PWP_RAO" ||
+    score_type_str == "rao"){
+    return ScoreType::PWP_RAO;
   }
   else {
     Rcpp::stop("Unknown score type: '" + score_type_str + 
@@ -131,7 +134,7 @@ ScoreType parse_score_type(const std::string& score_type_str) {
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 //'
 //' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+//' of P(current | proposed) != P(proposed | current):
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 //'
 //' where \eqn{|V|} is the number of possible swap vertices for a solution.
@@ -313,8 +316,8 @@ Rcpp::List run_mcmc(
 //' @param alpha Parameter controlling the add/remove mutation bias. Higher values
 //'   favor adding nodes. Default: 1.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
- //'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
- //'   for the wilcoxon test with continuous output.
+//'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+//'   for the wilcoxon test with continuous output.
 //' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 //'   of different solutions. Default: FALSE.
 //' @param verbose If TRUE, prints progress during the run. Default: FALSE.
@@ -344,7 +347,7 @@ Rcpp::List run_mcmc(
 //' to other solutions in the population, encouraging exploration of diverse regions.
 //'
 //' @examples
-//' \dontrun
+//' \dontrun{
 //' # Create example data
 //' patient_df <- data.frame(
 //'   patient_id = 1:100,
@@ -510,7 +513,7 @@ Rcpp::List run_genetic_algorithm(
 //' @param name_column (Optional) Either a string or integer (1-based index) 
 //'  specifying the column in \code{tree} that contains the corresponding name
 //'  of nodes. Defaults to \code{NULL}.
- //' @param epochs Number of MCMC iterations to run.
+//' @param epochs Number of MCMC iterations to run.
 //' @param temperature Temperature parameter for the Metropolis-Hastings acceptance
 //'   probability. Higher values lead to an easiest acceptance of lower score. Default: 1.0.
 //' @param n_results Number of top solutions to track and return. Default: 10.
@@ -552,7 +555,7 @@ Rcpp::List run_genetic_algorithm(
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 //'
 //' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+//' of P(current | proposed) != P(proposed | current):
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 //'
 //' where \eqn{|V|} is the number of possible swap vertices for a solution.
@@ -948,7 +951,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 //'
 //' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+//' of P(current | proposed) != P(proposed | current):
 //' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 //'
 //' where \eqn{|V|} is the number of possible swap vertices for a solution.

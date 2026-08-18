@@ -36,6 +36,36 @@
     .Call(`_treehunt_test_patient_data_has_combination`, data_ptr, patient_idx, combination)
 }
 
+#' Internal C++ engine for the PWP Rao genetic algorithm
+#'
+#' Use \code{run_pwp_genetic_algorithm()} from R.
+#' @keywords internal
+run_genetic_algorithm_pwp_cpp <- function(patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 2L, tournament_size = 3L, alpha = 1.0, diversity = FALSE, seed = 1L, verbose = FALSE) {
+    .Call(`_treehunt_run_genetic_algorithm_pwp_cpp`, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, diversity, seed, verbose)
+}
+
+#' Internal C++ engine for PWP Rao MCMC
+#'
+#' Use \code{run_pwp_mcmc()} from R.
+#' @keywords internal
+run_mcmc_pwp_cpp <- function(patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, epochs = 100000L, temperature = 1.0, n_results = 20L, cocktail_size = 2L, prob_type1 = 0.01, beta = 20L, max_score = 50.0, seed = 1L, verbose = FALSE) {
+    .Call(`_treehunt_run_mcmc_pwp_cpp`, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, seed, verbose)
+}
+
+#' Evaluate PWP Rao statistics for specified combinations
+#'
+#' @keywords internal
+score_pwp_combinations_cpp <- function(combinations, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context) {
+    .Call(`_treehunt_score_pwp_combinations_cpp`, combinations, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context)
+}
+
+#' Construct one hierarchical combination indicator
+#'
+#' @keywords internal
+pwp_combination_flag_cpp <- function(combination, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column) {
+    .Call(`_treehunt_pwp_combination_flag_cpp`, combination, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column)
+}
+
 #' @keywords internal
 .test_create_solution <- function(nodes) {
     .Call(`_treehunt_test_create_solution`, nodes)
@@ -161,78 +191,6 @@
     .Call(`_treehunt_test_tree_info`, ptr)
 }
 
-#' Run Genetic Algorithm for High Score Nodes Combination Search
-#'
-#' Performs a genetic algorithm search to find optimal node combinations that
-#' maximize a specified score function. The algorithm evolves a population of
-#' solutions through selection, crossover, and mutation operations.
-#'
-#' @param patient_data A data.frame containing patient information with at least
-#'   a node column and a target column.
-#' @param node_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the column containing node indexes. This column should be either:
-#'   \itemize{
-#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
-#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
-#'   }
-#' @param target_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the target/outcome column. Integer values are treated as binary,
-#'   numeric values with non-0/1 entries are treated as continuous.
-#' @param tree_depth An integer vector specifying the depth of each node in the
-#'   tree structure. Must start at depth 1 and children must be at depth+1 of
-#'   their parent.
-#' @param seed_population A \code{list} of integer vectors representing an initial 
-#'   population (vector of 1-based tree index). If provided, these individuals 
-#'   will be included in the first generation . If the list contains fewer 
-#'   individuals than \code{population_size}, the remainder will be initialized 
-#'   randomly. If \code{NULL} (the default), the entire initial population 
-#'   is generated randomly.
-#' @param population_size Number of solutions in the population. Default: 100.
-#' @param epochs Number of generations to evolve. Default: 1000.
-#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
-#' @param prob_mutation_type1 When mutation occurs, probability of using Type 1
-#'   (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
-#' @param crossover_rate Probability of applying crossover to selected parents.
-#'   Default: 0.8.
-#' @param elite_count Number of top solutions to preserve unchanged each generation.
-#'   Default: 0.
-#' @param tournament_size Number of solutions competing in tournament selection.
-#'   Default: 2.
-#' @param alpha Parameter controlling the add/remove mutation bias. Higher values
-#'   favor adding nodes. Default: 1.0.
-#' @param score_type Scoring function to use. Either "hypergeometric" for the
-NULL
-
-#' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
-#' Tree
-#'
-#' Performs a Modified Metropolis-Hastings MCMC sampling to estimate the score
-#' distribution of nodes combination of a given \emph{cocktail_size}. The
-#' algorithm explores the space of tree combinations using a proposal law 
-#' composed of two mutation types.
-#'
-#' @param patient_data A data.frame containing patient information with at least
-#'   a node column and a target column.
-#' @param node_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the column containing drug codes. This column should be either:
-#'   \itemize{
-#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
-#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
-#'   }
-#' @param target_column Either a string (column name) or integer (column index, 1-based)
-#'   specifying the target/outcome column. Integer values are treated as binary for now,
-#'   numeric values with non-0/1 entries are treated as continuous.
-#' @param tree A data.frame containing the structural definition of the tree.
-#' @param depth_column Either a string or integer specifying the column in 
-#'   \code{tree} that contains the node depth levels.
-#' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
-#'  specifying the column in \code{tree_depth} that contains upper 
-#'  bound of nodes. Defaults to \code{NULL}.
-#' @param name_column (Optional) Either a string or integer (1-based index) 
-#'  specifying the column in \code{tree} that contains the corresponding name
-#'  of nodes. Defaults to \code{NULL}.
-NULL
-
 #' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
 #' Tree
 #'
@@ -297,7 +255,7 @@ NULL
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 #'
 #' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-#' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+#' of P(current | proposed) != P(proposed | current):
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 #'
 #' where \eqn{|V|} is the number of possible swap vertices for a solution.
@@ -339,6 +297,48 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
     .Call(`_treehunt_run_mcmc`, patient_data, node_column, target_column, tree_depth, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
 }
 
+#' Run Genetic Algorithm for High Score Nodes Combination Search
+#'
+#' Performs a genetic algorithm search to find optimal node combinations that
+#' maximize a specified score function. The algorithm evolves a population of
+#' solutions through selection, crossover, and mutation operations.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing node indexes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree_depth An integer vector specifying the depth of each node in the
+#'   tree structure. Must start at depth 1 and children must be at depth+1 of
+#'   their parent.
+#' @param seed_population A \code{list} of integer vectors representing an initial 
+#'   population (vector of 1-based tree index). If provided, these individuals 
+#'   will be included in the first generation . If the list contains fewer 
+#'   individuals than \code{population_size}, the remainder will be initialized 
+#'   randomly. If \code{NULL} (the default), the entire initial population 
+#'   is generated randomly.
+#' @param population_size Number of solutions in the population. Default: 100.
+#' @param epochs Number of generations to evolve. Default: 1000.
+#' @param mutation_rate Probability of mutating each offspring. Default: 0.1.
+#' @param prob_mutation_type1 When mutation occurs, probability of using Type 1
+#'   (add/remove) vs Type 2 (swap) mutation. Default: 0.2.
+#' @param crossover_rate Probability of applying crossover to selected parents.
+#'   Default: 0.8.
+#' @param elite_count Number of top solutions to preserve unchanged each generation.
+#'   Default: 0.
+#' @param tournament_size Number of solutions competing in tournament selection.
+#'   Default: 2.
+#' @param alpha Parameter controlling the add/remove mutation bias. Higher values
+#'   favor adding nodes. Default: 1.0.
+#' @param score_type Scoring function to use. Either "hypergeometric" for the
+#'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
+#'   for the wilcoxon test with continuous output.
 #' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 #'   of different solutions. Default: FALSE.
 #' @param verbose If TRUE, prints progress during the run. Default: FALSE.
@@ -368,7 +368,7 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
 #' to other solutions in the population, encouraging exploration of diverse regions.
 #'
 #' @examples
-#' \dontrun
+#' \dontrun{
 #' # Create example data
 #' patient_df <- data.frame(
 #'   patient_id = 1:100,
@@ -402,6 +402,35 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
     .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
 }
 
+#' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
+#' Tree
+#'
+#' Performs a Modified Metropolis-Hastings MCMC sampling to estimate the score
+#' distribution of nodes combination of a given \emph{cocktail_size}. The
+#' algorithm explores the space of tree combinations using a proposal law 
+#' composed of two mutation types.
+#'
+#' @param patient_data A data.frame containing patient information with at least
+#'   a node column and a target column.
+#' @param node_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the column containing drug codes. This column should be either:
+#'   \itemize{
+#'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+#'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+#'   }
+#' @param target_column Either a string (column name) or integer (column index, 1-based)
+#'   specifying the target/outcome column. Integer values are treated as binary for now,
+#'   numeric values with non-0/1 entries are treated as continuous.
+#' @param tree A data.frame containing the structural definition of the tree.
+#' @param depth_column Either a string or integer specifying the column in 
+#'   \code{tree} that contains the node depth levels.
+#' @param upper_bound_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree_depth} that contains upper 
+#'  bound of nodes. Defaults to \code{NULL}.
+#' @param name_column (Optional) Either a string or integer (1-based index) 
+#'  specifying the column in \code{tree} that contains the corresponding name
+#'  of nodes. Defaults to \code{NULL}.
+#' @param epochs Number of MCMC iterations to run.
 #' @param temperature Temperature parameter for the Metropolis-Hastings acceptance
 #'   probability. Higher values lead to an easiest acceptance of lower score. Default: 1.0.
 #' @param n_results Number of top solutions to track and return. Default: 10.
@@ -443,7 +472,7 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 #'
 #' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-#' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+#' of P(current | proposed) != P(proposed | current):
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 #'
 #' where \eqn{|V|} is the number of possible swap vertices for a solution.
@@ -622,7 +651,7 @@ run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_colu
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
 #'
 #' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-#' of \mathbb{P}(current | proposed) \noteq \mathbb{P}(proposed | current):
+#' of P(current | proposed) != P(proposed | current):
 #' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
 #'
 #' where \eqn{|V|} is the number of possible swap vertices for a solution.

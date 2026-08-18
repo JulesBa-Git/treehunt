@@ -207,7 +207,8 @@ Solution Solution::mutate_replace_type1(const tree_structure &tree,
 Solution Solution::mutate_genetic_algorithm(const tree_structure &tree,
                                             double alpha,
                                             std::mt19937 &rng) const {
-  double type_probability = R::runif(0.0, 1.0);
+  std::uniform_real_distribution<double> mutation_type(0.0, 1.0);
+  double type_probability = mutation_type(rng);
 
   if (type_probability < .5)
     return mutate_add_remove_type1(tree, alpha, rng);

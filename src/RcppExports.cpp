@@ -98,6 +98,106 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// run_genetic_algorithm_pwp_cpp
+Rcpp::List run_genetic_algorithm_pwp_cpp(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, SEXP id_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, Rcpp::List score_context, Rcpp::Nullable<Rcpp::List> seed_population, std::size_t population_size, std::size_t epochs, double mutation_rate, double prob_mutation_type1, double crossover_rate, std::size_t elite_count, std::size_t tournament_size, double alpha, bool diversity, int seed, bool verbose);
+RcppExport SEXP _treehunt_run_genetic_algorithm_pwp_cpp(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP id_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP score_contextSEXP, SEXP seed_populationSEXP, SEXP population_sizeSEXP, SEXP epochsSEXP, SEXP mutation_rateSEXP, SEXP prob_mutation_type1SEXP, SEXP crossover_rateSEXP, SEXP elite_countSEXP, SEXP tournament_sizeSEXP, SEXP alphaSEXP, SEXP diversitySEXP, SEXP seedSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type score_context(score_contextSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type seed_population(seed_populationSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type population_size(population_sizeSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type epochs(epochsSEXP);
+    Rcpp::traits::input_parameter< double >::type mutation_rate(mutation_rateSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_mutation_type1(prob_mutation_type1SEXP);
+    Rcpp::traits::input_parameter< double >::type crossover_rate(crossover_rateSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type elite_count(elite_countSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type tournament_size(tournament_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< bool >::type diversity(diversitySEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_genetic_algorithm_pwp_cpp(patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, diversity, seed, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// run_mcmc_pwp_cpp
+Rcpp::List run_mcmc_pwp_cpp(Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, SEXP id_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, Rcpp::List score_context, std::size_t epochs, double temperature, std::size_t n_results, std::size_t cocktail_size, double prob_type1, std::size_t beta, double max_score, int seed, bool verbose);
+RcppExport SEXP _treehunt_run_mcmc_pwp_cpp(SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP id_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP score_contextSEXP, SEXP epochsSEXP, SEXP temperatureSEXP, SEXP n_resultsSEXP, SEXP cocktail_sizeSEXP, SEXP prob_type1SEXP, SEXP betaSEXP, SEXP max_scoreSEXP, SEXP seedSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type score_context(score_contextSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type epochs(epochsSEXP);
+    Rcpp::traits::input_parameter< double >::type temperature(temperatureSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type n_results(n_resultsSEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type cocktail_size(cocktail_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_type1(prob_type1SEXP);
+    Rcpp::traits::input_parameter< std::size_t >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type max_score(max_scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_mcmc_pwp_cpp(patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, seed, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// score_pwp_combinations_cpp
+Rcpp::DataFrame score_pwp_combinations_cpp(Rcpp::List combinations, int index_base, Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, SEXP id_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column, Rcpp::List score_context);
+RcppExport SEXP _treehunt_score_pwp_combinations_cpp(SEXP combinationsSEXP, SEXP index_baseSEXP, SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP id_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP, SEXP score_contextSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type combinations(combinationsSEXP);
+    Rcpp::traits::input_parameter< int >::type index_base(index_baseSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type score_context(score_contextSEXP);
+    rcpp_result_gen = Rcpp::wrap(score_pwp_combinations_cpp(combinations, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column, score_context));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pwp_combination_flag_cpp
+Rcpp::LogicalVector pwp_combination_flag_cpp(Rcpp::IntegerVector combination, int index_base, Rcpp::DataFrame patient_data, SEXP node_column, SEXP target_column, SEXP id_column, Rcpp::DataFrame tree, SEXP depth_column, SEXP upper_bound_column, SEXP name_column);
+RcppExport SEXP _treehunt_pwp_combination_flag_cpp(SEXP combinationSEXP, SEXP index_baseSEXP, SEXP patient_dataSEXP, SEXP node_columnSEXP, SEXP target_columnSEXP, SEXP id_columnSEXP, SEXP treeSEXP, SEXP depth_columnSEXP, SEXP upper_bound_columnSEXP, SEXP name_columnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type combination(combinationSEXP);
+    Rcpp::traits::input_parameter< int >::type index_base(index_baseSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type patient_data(patient_dataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type node_column(node_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type target_column(target_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type id_column(id_columnSEXP);
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type tree(treeSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type depth_column(depth_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type upper_bound_column(upper_bound_columnSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type name_column(name_columnSEXP);
+    rcpp_result_gen = Rcpp::wrap(pwp_combination_flag_cpp(combination, index_base, patient_data, node_column, target_column, id_column, tree, depth_column, upper_bound_column, name_column));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_create_solution
 SEXP test_create_solution(Rcpp::IntegerVector nodes);
 RcppExport SEXP _treehunt_test_create_solution(SEXP nodesSEXP) {
@@ -585,6 +685,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_treehunt_test_patient_data_get_target", (DL_FUNC) &_treehunt_test_patient_data_get_target, 2},
     {"_treehunt_test_patient_data_get_target_double", (DL_FUNC) &_treehunt_test_patient_data_get_target_double, 2},
     {"_treehunt_test_patient_data_has_combination", (DL_FUNC) &_treehunt_test_patient_data_has_combination, 3},
+    {"_treehunt_run_genetic_algorithm_pwp_cpp", (DL_FUNC) &_treehunt_run_genetic_algorithm_pwp_cpp, 21},
+    {"_treehunt_run_mcmc_pwp_cpp", (DL_FUNC) &_treehunt_run_mcmc_pwp_cpp, 18},
+    {"_treehunt_score_pwp_combinations_cpp", (DL_FUNC) &_treehunt_score_pwp_combinations_cpp, 11},
+    {"_treehunt_pwp_combination_flag_cpp", (DL_FUNC) &_treehunt_pwp_combination_flag_cpp, 10},
     {"_treehunt_test_create_solution", (DL_FUNC) &_treehunt_test_create_solution, 1},
     {"_treehunt_test_solution_get_nodes", (DL_FUNC) &_treehunt_test_solution_get_nodes, 1},
     {"_treehunt_test_solution_size", (DL_FUNC) &_treehunt_test_solution_size, 1},

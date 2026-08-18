@@ -3,19 +3,23 @@
 template <typename TargetType>
 GeneticAlgorithm<TargetType>::GeneticAlgorithm(
     const PatientData<TargetType> &data, const GAParams &params,
-    const Rcpp::Nullable<Rcpp::List> &seed_population)
-    : population_{}, data_{data}, params_{params}, cache_hits_{0} {
+    const Rcpp::Nullable<Rcpp::List> &seed_population,
+    const PWPScoreContext *pwp_context)
+    : population_{}, data_{data}, pwp_context_{pwp_context}, params_{params},
+      cache_hits_{0} {
 
   population_.reserve(params.population_size);
-  std::random_device rd;
-  std::vector<unsigned int> seed_data;
-  for (int i = 0; i < 4; ++i) {
-    seed_data.push_back(rd());
+  if (params.seed >= 0) {
+    rng_ = std::mt19937(static_cast<unsigned int>(params.seed));
+  } else {
+    std::random_device rd;
+    std::vector<unsigned int> seed_data;
+    for (int i = 0; i < 4; ++i) {
+      seed_data.push_back(rd());
+    }
+    std::seed_seq seq(seed_data.begin(), seed_data.end());
+    rng_ = std::mt19937(seq);
   }
-
-  std::seed_seq seq(seed_data.begin(), seed_data.end());
-
-  rng_ = std::mt19937(seq);
 
   if (seed_population.isNotNull()) {
     Rcpp::List seed(seed_population);
@@ -75,6 +79,11 @@ double GeneticAlgorithm<TargetType>::compute_score(const Solution &sol) const {
 
   case ScoreType::RESIDUALS:
     return ScoreFunctions<TargetType>::compute_residuals_risk(data_, sol);
+
+  case ScoreType::PWP_RAO:
+    if (pwp_context_ == nullptr)
+      Rcpp::stop("PWP Rao scoring requires a PWP score context.");
+    return pwp_context_->compute(sol).fitness;
     
   default:
     Rcpp::stop("Unknown score type");

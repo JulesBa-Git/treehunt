@@ -14,7 +14,8 @@ enum class ScoreType{
   WILCOXON,
   COMPOSITE,
   RESIDUALS,
-  BOOTSTRAP
+  BOOTSTRAP,
+  PWP_RAO
 };
 
 template<typename TargetType>

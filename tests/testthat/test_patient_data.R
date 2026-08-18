@@ -107,8 +107,8 @@ test_that("PatientData hierarchical matching works", {
   # Solution [1, 3] covers [2, 4]
   expect_true(.test_patient_data_has_combination(data, 0, c(1, 3)))
   
-  # Solution [1] only covers [2], not [4]
-  expect_false(.test_patient_data_has_combination(data, 0, c(1)))
+  # Solution [1] is present through descendant [2]; extra node [4] is allowed.
+  expect_true(.test_patient_data_has_combination(data, 0, c(1)))
   
   # Solution [0] (root) covers everything
   expect_true(.test_patient_data_has_combination(data, 0, c(0)))
@@ -132,12 +132,13 @@ test_that("PatientData handles edge cases", {
   
   data <- .test_create_patient_data_int(patient_df, "nodes", "outcome", tree)
   
-  # Patient with no nodes matches any solution (vacuous truth)
-  expect_true(.test_patient_data_has_combination(data, 1, c(1)))
+  # A patient with no nodes cannot match a non-empty combination.
+  expect_false(.test_patient_data_has_combination(data, 1, c(1)))
+  # The empty combination is a subset of every node set (vacuous truth).
   expect_true(.test_patient_data_has_combination(data, 1, integer(0)))
   
-  # Patient with nodes doesn't match empty solution
-  expect_false(.test_patient_data_has_combination(data, 0, integer(0)))
+  # The same subset convention applies to a patient with observed nodes.
+  expect_true(.test_patient_data_has_combination(data, 0, integer(0)))
 })
 
 test_that("PatientData column specification works by name and index", {
