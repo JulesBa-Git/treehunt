@@ -1,4 +1,5 @@
 #include "genetic_algorithm.h"
+#include <cmath>
 
 template <typename TargetType>
 GeneticAlgorithm<TargetType>::GeneticAlgorithm(
@@ -7,6 +8,12 @@ GeneticAlgorithm<TargetType>::GeneticAlgorithm(
     const PWPScoreContext *pwp_context)
     : population_{}, data_{data}, pwp_context_{pwp_context}, params_{params},
       cache_hits_{0} {
+
+  if (!std::isfinite(params_.prob_mutation_type1) ||
+      params_.prob_mutation_type1 < 0.0 ||
+      params_.prob_mutation_type1 > 1.0) {
+    Rcpp::stop("prob_mutation_type1 must be finite and between 0 and 1.");
+  }
 
   population_.reserve(params.population_size);
   if (params.seed >= 0) {
@@ -181,7 +188,9 @@ void GeneticAlgorithm<TargetType>::mutate(
 
     if (mutation_probability < params_.mutation_rate) {
       Solution tmp = offspring[i].mutate_genetic_algorithm(data_.get_tree(),
-                                                           params_.alpha, rng_);
+                                                           params_.alpha,
+                                                           params_.prob_mutation_type1,
+                                                           rng_);
       if (tmp.is_valid(data_.get_tree())) {
         offspring[i] = std::move(tmp);
       }

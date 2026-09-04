@@ -73,14 +73,19 @@ bool Solution::is_valid(const tree_structure &tree) const {
   if (selected_nodes_.empty())
     return false;
 
-  // Check for duplicates and wrong index
-  for (size_t i = 1; i < selected_nodes_.size(); ++i) {
-    if (selected_nodes_[i] == selected_nodes_[i - 1]) {
-      return false;
-    } else if (selected_nodes_[i] < 0 ||
-               selected_nodes_[i] >= tree.get_depth().size()) {
+  // Check every node before using it to index a tree vector. In particular,
+  // the first (or only) selected node must not escape bounds validation.
+  for (int node : selected_nodes_) {
+    if (node < 0 ||
+        static_cast<size_t>(node) >= tree.get_depth().size()) {
       return false;
     }
+  }
+
+  // The constructor sorts nodes, so duplicates are adjacent.
+  for (size_t i = 1; i < selected_nodes_.size(); ++i) {
+    if (selected_nodes_[i] == selected_nodes_[i - 1])
+      return false;
   }
 
   const auto &upper_bound = tree.get_upper_bound();
@@ -206,11 +211,12 @@ Solution Solution::mutate_replace_type1(const tree_structure &tree,
 
 Solution Solution::mutate_genetic_algorithm(const tree_structure &tree,
                                             double alpha,
+                                            double prob_mutation_type1,
                                             std::mt19937 &rng) const {
   std::uniform_real_distribution<double> mutation_type(0.0, 1.0);
   double type_probability = mutation_type(rng);
 
-  if (type_probability < .5)
+  if (type_probability < prob_mutation_type1)
     return mutate_add_remove_type1(tree, alpha, rng);
   else
     return mutate_swap_type2(tree, rng);

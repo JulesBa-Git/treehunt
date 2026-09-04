@@ -61,6 +61,7 @@ mcmc_results <- run_mcmc(
   epochs = 10000,
   cocktail_size = 2,
   score_type = "hypergeometric",
+  seed = 4601L,
   verbose = TRUE
 )
 
@@ -83,12 +84,18 @@ ga_results <- run_genetic_algorithm(
   mutation_rate = 0.1,
   elite_count = 2,
   score_type = "hypergeometric",
+  seed = 4602L,
   verbose = TRUE
 )
 
 # Get summary of top solutions
 top_solutions_summary(ga_results)
 ```
+
+The generic GA and MCMC wrappers seed their C++ random-number generators
+directly. Supply `seed` to reproduce a stochastic run; the default `NULL`
+preserves non-deterministic initialization. Calling `set.seed()` alone does not
+set these C++ streams.
 
 ## 📊 Scoring Functions
 

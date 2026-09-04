@@ -167,6 +167,11 @@ pwp_combination_flag_cpp <- function(combination, index_base, patient_data, node
 }
 
 #' @keywords internal
+.test_solution_mutate_genetic_algorithm <- function(sol_ptr, tree_ptr, alpha, prob_mutation_type1, seed) {
+    .Call(`_treehunt_test_solution_mutate_genetic_algorithm`, sol_ptr, tree_ptr, alpha, prob_mutation_type1, seed)
+}
+
+#' @keywords internal
 .test_solution_mutate_replace_type1 <- function(sol_ptr, tree_ptr, seed) {
     .Call(`_treehunt_test_solution_mutate_replace_type1`, sol_ptr, tree_ptr, seed)
 }
@@ -230,6 +235,8 @@ pwp_combination_flag_cpp <- function(combination, index_base, patient_data, node
 #'   Default: "hypergeometric".
 #' @param verbose If TRUE, prints progress and statistics during the run.
 #'   Default: FALSE.
+#' @param seed Optional non-negative integer seed for the C++ random-number
+#'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -293,8 +300,8 @@ pwp_combination_flag_cpp <- function(combination, index_base, patient_data, node
 #' }
 #'
 #' @export
-run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epochs, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE) {
-    .Call(`_treehunt_run_mcmc`, patient_data, node_column, target_column, tree_depth, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
+run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epochs, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE, seed = NULL) {
+    .Call(`_treehunt_run_mcmc`, patient_data, node_column, target_column, tree_depth, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose, seed)
 }
 
 #' Run Genetic Algorithm for High Score Nodes Combination Search
@@ -342,6 +349,8 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
 #' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 #'   of different solutions. Default: FALSE.
 #' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+#' @param seed Optional non-negative integer seed for the C++ random-number
+#'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -398,8 +407,8 @@ run_mcmc <- function(patient_data, node_column, target_column, tree_depth, epoch
 #'
 #' @export
 #' @seealso \code{\link{run_mcmc}} for an MCMC-based optimization approach
-run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
-    .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+run_genetic_algorithm <- function(patient_data, node_column, target_column, tree_depth, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE, seed = NULL) {
+    .Call(`_treehunt_run_genetic_algorithm`, patient_data, node_column, target_column, tree_depth, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose, seed)
 }
 
 #' Run MCMC Algorithm for Estimation of Score Distribution Among Nodes of The
@@ -447,6 +456,8 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
 #'   Default: "hypergeometric".
 #' @param verbose If TRUE, prints progress and statistics during the run.
 #'   Default: FALSE.
+#' @param seed Optional non-negative integer seed for the C++ random-number
+#'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -511,8 +522,8 @@ run_genetic_algorithm <- function(patient_data, node_column, target_column, tree
 #' }
 #'
 #' @export
-run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, epochs = 1e6L, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE) {
-    .Call(`_treehunt_run_mcmc_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose)
+run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, epochs = 1e6L, temperature = 1.0, n_results = 10L, cocktail_size = 2L, prob_type1 = 0.01, beta = 4L, max_score = 200.0, score_type = "hypergeometric", verbose = FALSE, seed = NULL) {
+    .Call(`_treehunt_run_mcmc_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, epochs, temperature, n_results, cocktail_size, prob_type1, beta, max_score, score_type, verbose, seed)
 }
 
 #' Run Genetic Algorithm for High Score Nodes Combination Search
@@ -552,6 +563,8 @@ run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, dep
 #' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
 #' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
 #' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+#' @param seed Optional non-negative integer seed for the C++ random-number
+#'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -588,8 +601,8 @@ run_mcmc_df_tree <- function(patient_data, node_column, target_column, tree, dep
 #' }
 #'
 #' @export
-run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE) {
-    .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose)
+run_genetic_algorithm_df_tree <- function(patient_data, node_column, target_column, tree, depth_column, upper_bound_column = NULL, name_column = NULL, id_column = NULL, seed_population = NULL, population_size = 100L, epochs = 1000L, mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8, elite_count = 0L, tournament_size = 3L, alpha = 1.0, score_type = "hypergeometric", diversity = FALSE, verbose = FALSE, seed = NULL) {
+    .Call(`_treehunt_run_genetic_algorithm_df_tree`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, seed_population, population_size, epochs, mutation_rate, prob_mutation_type1, crossover_rate, elite_count, tournament_size, alpha, score_type, diversity, verbose, seed)
 }
 
 #' Run MCMC Algorithm to Compute the Score Distribution Among Node Combinations 
@@ -690,7 +703,28 @@ mcmc_size_2_true_score_distribution <- function(patient_data, node_column, targe
     .Call(`_treehunt_mcmc_size_2_true_score_distribution`, patient_data, node_column, target_column, tree, depth_column, upper_bound_column, name_column, id_column, beta, max_score, score_type)
 }
 
-#' Compute score on a list of cocktails
+#' Compute scores for supplied node combinations
+#'
+#' @param cocktail_list List of integer vectors identifying tree rows with
+#'   one-based R indices. The returned \code{solutions} retain these indices.
+#' @param patient_data Observation data frame. Its node list-column uses the
+#'   package's zero-based internal tree indices.
+#' @param node_column Name or one-based position of the node list-column.
+#' @param target_column Name or one-based position of the outcome column.
+#' @param tree Tree data frame in depth-first order.
+#' @param depth_column Name or one-based position of the tree-depth column.
+#' @param id_column Optional name or one-based position of the observation-unit
+#'   identifier. It is required by patient-level continuous-outcome scores.
+#' @param upper_bound_column Optional name or one-based position of the
+#'   zero-based inclusive subtree upper-bound column.
+#' @param name_column Optional name or one-based position of the node-label column.
+#' @param score_type Registered score implementation to evaluate.
+#' @return A list containing the supplied combinations, their scores, coverage
+#'   counts, and score-specific summaries.
+#' @details Candidate vectors deliberately use ordinary one-based R row
+#'   positions at this user-facing boundary. They are checked against the tree
+#'   before being converted once to the zero-based representation used by the
+#'   C++ scoring engine.
 #' @export
 compute_score <- function(cocktail_list, patient_data, node_column, target_column, tree, depth_column, id_column = NULL, upper_bound_column = NULL, name_column = NULL, score_type = "hypergeometric") {
     .Call(`_treehunt_compute_score`, cocktail_list, patient_data, node_column, target_column, tree, depth_column, id_column, upper_bound_column, name_column, score_type)

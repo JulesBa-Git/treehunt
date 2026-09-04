@@ -20,7 +20,8 @@ run_genetic_algorithm(
   alpha = 1,
   score_type = "hypergeometric",
   diversity = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  seed = NULL
 )
 }
 \arguments{
@@ -42,11 +43,11 @@ numeric values with non-0/1 entries are treated as continuous.}
 tree structure. Must start at depth 1 and children must be at depth+1 of
 their parent.}
 
-\item{seed_population}{A \code{list} of integer vectors representing an initial
-population (vector of 1-based tree index). If provided, these individuals
-will be included in the first generation . If the list contains fewer
-individuals than \code{population_size}, the remainder will be initialized
-randomly. If \code{NULL} (the default), the entire initial population
+\item{seed_population}{A \code{list} of integer vectors representing an initial 
+population (vector of 1-based tree index). If provided, these individuals 
+will be included in the first generation . If the list contains fewer 
+individuals than \code{population_size}, the remainder will be initialized 
+randomly. If \code{NULL} (the default), the entire initial population 
 is generated randomly.}
 
 \item{population_size}{Number of solutions in the population. Default: 100.}
@@ -78,6 +79,9 @@ for the wilcoxon test with continuous output.}
 of different solutions. Default: FALSE.}
 
 \item{verbose}{If TRUE, prints progress during the run. Default: FALSE.}
+
+\item{seed}{Optional non-negative integer seed for the C++ random-number
+generator. If \code{NULL}, the generator is initialized non-deterministically.}
 }
 \value{
 A list containing:

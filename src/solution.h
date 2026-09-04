@@ -99,7 +99,9 @@ public:
   Solution mutate_replace_type1(const tree_structure& tree, std::mt19937& rng) const;
   //wrapper for the mutation of genetic_algorithm
   Solution mutate_genetic_algorithm(const tree_structure& tree,
-                                          double alpha, std::mt19937& rng) const;
+                                    double alpha,
+                                    double prob_mutation_type1,
+                                    std::mt19937& rng) const;
   
   // Crossover operators (static)
   static std::pair<Solution, Solution> crossover_single_point(

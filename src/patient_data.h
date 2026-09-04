@@ -42,8 +42,8 @@ public:
   }
   
   int get_id(size_t i) const{
-    if( i >= n_patients_)
-      Rcpp::stop("Patient index out of bounds");
+    if (i >= patients_id_.size())
+      Rcpp::stop("An id_column is required by this score.");
     return patients_id_[i];
   }
   

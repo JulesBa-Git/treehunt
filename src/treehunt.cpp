@@ -3,6 +3,8 @@
 #include "genetic_algorithm.h"
 #include "patient_data.h"
 #include "tree_structure.h"
+#include <cmath>
+#include <limits>
 
 
 // Helper: Detect target type from R vector
@@ -67,6 +69,27 @@ ScoreType parse_score_type(const std::string& score_type_str) {
   }
 }
 
+// A NULL seed preserves the historical non-deterministic initialization.
+// Otherwise require a scalar non-negative integer that can be stored in the
+// engine parameter structs.
+int parse_optional_seed(SEXP seed) {
+  if (Rf_isNull(seed))
+    return -1;
+
+  if (Rf_length(seed) != 1 ||
+      (TYPEOF(seed) != INTSXP && TYPEOF(seed) != REALSXP)) {
+    Rcpp::stop("seed must be NULL or one non-negative integer.");
+  }
+
+  const double value = Rcpp::as<double>(seed);
+  if (!std::isfinite(value) || value < 0.0 || std::floor(value) != value ||
+      value > static_cast<double>(std::numeric_limits<int>::max())) {
+    Rcpp::stop("seed must be NULL or one non-negative integer.");
+  }
+
+  return static_cast<int>(value);
+}
+
 // MCMC Algorithm Interface
 
 
@@ -109,6 +132,8 @@ ScoreType parse_score_type(const std::string& score_type_str) {
 //'   Default: "hypergeometric".
 //' @param verbose If TRUE, prints progress and statistics during the run.
 //'   Default: FALSE.
+//' @param seed Optional non-negative integer seed for the C++ random-number
+//'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
 //' @return A list containing:
 //'   \describe{
@@ -186,7 +211,8 @@ Rcpp::List run_mcmc(
    size_t beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric",
-   bool verbose = false) {
+   bool verbose = false,
+   SEXP seed = R_NilValue) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -219,6 +245,7 @@ Rcpp::List run_mcmc(
  params.max_score = max_score;
  params.score_type_ = parse_score_type(score_type);
  params.verbose = verbose;
+ params.seed = parse_optional_seed(seed);
  
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
@@ -259,7 +286,9 @@ Rcpp::List run_mcmc(
      Rcpp::Named("type2_accepted") = results.type2_accepted,
      Rcpp::Named("type1_in_population") = results.type1_in_population,
      Rcpp::Named("type2_in_population") = results.type2_in_population,
-     Rcpp::Named("cocktail_size") = results.cocktail_size
+     Rcpp::Named("cocktail_size") = results.cocktail_size,
+     Rcpp::Named("seed") =
+       (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
  );
  
  return Rcpp::List::create(
@@ -321,6 +350,8 @@ Rcpp::List run_mcmc(
 //' @param diversity If TRUE, applies a diversity penalty to encourage exploration
 //'   of different solutions. Default: FALSE.
 //' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+//' @param seed Optional non-negative integer seed for the C++ random-number
+//'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
 //' @return A list containing:
 //'   \describe{
@@ -394,7 +425,8 @@ Rcpp::List run_genetic_algorithm(
    double alpha = 1.0,
    std::string score_type = "hypergeometric",
    bool diversity = false,
-   bool verbose = false) {
+   bool verbose = false,
+   SEXP seed = R_NilValue) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -411,6 +443,10 @@ Rcpp::List run_genetic_algorithm(
  }
  if (mutation_rate < 0 || mutation_rate > 1) {
    Rcpp::stop("mutation_rate must be between 0 and 1");
+ }
+ if (!std::isfinite(prob_mutation_type1) || prob_mutation_type1 < 0 ||
+     prob_mutation_type1 > 1) {
+   Rcpp::stop("prob_mutation_type1 must be finite and between 0 and 1");
  }
  if (crossover_rate < 0 || crossover_rate > 1) {
    Rcpp::stop("crossover_rate must be between 0 and 1");
@@ -438,6 +474,7 @@ Rcpp::List run_genetic_algorithm(
  params.score_type = parse_score_type(score_type);
  params.diversity = diversity;
  params.verbose = verbose;
+ params.seed = parse_optional_seed(seed);
  
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
@@ -469,7 +506,9 @@ Rcpp::List run_genetic_algorithm(
    Rcpp::Named("tournament_size") = tournament_size,
    Rcpp::Named("alpha") = alpha,
    Rcpp::Named("score_type") = score_type,
-   Rcpp::Named("diversity") = diversity
+   Rcpp::Named("diversity") = diversity,
+   Rcpp::Named("seed") =
+     (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
  );
  
  Rcpp::List statistics = Rcpp::List::create(
@@ -530,6 +569,8 @@ Rcpp::List run_genetic_algorithm(
 //'   Default: "hypergeometric".
 //' @param verbose If TRUE, prints progress and statistics during the run.
 //'   Default: FALSE.
+//' @param seed Optional non-negative integer seed for the C++ random-number
+//'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
 //' @return A list containing:
 //'   \describe{
@@ -612,7 +653,8 @@ Rcpp::List run_mcmc_df_tree(
    size_t beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric",
-   bool verbose = false) {
+   bool verbose = false,
+   SEXP seed = R_NilValue) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -645,6 +687,7 @@ Rcpp::List run_mcmc_df_tree(
  params.max_score = max_score;
  params.score_type_ = parse_score_type(score_type);
  params.verbose = verbose;
+ params.seed = parse_optional_seed(seed);
  
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
@@ -687,7 +730,9 @@ Rcpp::List run_mcmc_df_tree(
      Rcpp::Named("type2_accepted") = results.type2_accepted,
      Rcpp::Named("type1_in_population") = results.type1_in_population,
      Rcpp::Named("type2_in_population") = results.type2_in_population,
-     Rcpp::Named("cocktail_size") = results.cocktail_size
+     Rcpp::Named("cocktail_size") = results.cocktail_size,
+     Rcpp::Named("seed") =
+       (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
  );
  
  return Rcpp::List::create(
@@ -741,6 +786,8 @@ Rcpp::List run_mcmc_df_tree(
 //' @param score_type Scoring function: "hypergeometric", "relative_risk", or "wilcoxon".
 //' @param diversity If TRUE, applies a diversity penalty to encourage exploration. Default: FALSE.
 //' @param verbose If TRUE, prints progress during the run. Default: FALSE.
+//' @param seed Optional non-negative integer seed for the C++ random-number
+//'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
 //' @return A list containing:
 //'   \describe{
@@ -798,7 +845,8 @@ Rcpp::List run_genetic_algorithm_df_tree(
    double alpha = 1.0,
    std::string score_type = "hypergeometric",
    bool diversity = false,
-   bool verbose = false) {
+   bool verbose = false,
+   SEXP seed = R_NilValue) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -815,6 +863,10 @@ Rcpp::List run_genetic_algorithm_df_tree(
  }
  if (mutation_rate < 0 || mutation_rate > 1) {
    Rcpp::stop("mutation_rate must be between 0 and 1");
+ }
+ if (!std::isfinite(prob_mutation_type1) || prob_mutation_type1 < 0 ||
+     prob_mutation_type1 > 1) {
+   Rcpp::stop("prob_mutation_type1 must be finite and between 0 and 1");
  }
  if (crossover_rate < 0 || crossover_rate > 1) {
    Rcpp::stop("crossover_rate must be between 0 and 1");
@@ -842,6 +894,7 @@ Rcpp::List run_genetic_algorithm_df_tree(
  params.score_type = parse_score_type(score_type);
  params.diversity = diversity;
  params.verbose = verbose;
+ params.seed = parse_optional_seed(seed);
 
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
@@ -875,7 +928,9 @@ Rcpp::List run_genetic_algorithm_df_tree(
    Rcpp::Named("tournament_size") = tournament_size,
    Rcpp::Named("alpha") = alpha,
    Rcpp::Named("score_type") = score_type,
-   Rcpp::Named("diversity") = diversity
+   Rcpp::Named("diversity") = diversity,
+   Rcpp::Named("seed") =
+     (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
  );
  
  Rcpp::List statistics = Rcpp::List::create(
@@ -1075,7 +1130,28 @@ Rcpp::List mcmc_size_2_true_score_distribution(
 }
 
 
-//' Compute score on a list of cocktails
+//' Compute scores for supplied node combinations
+//'
+//' @param cocktail_list List of integer vectors identifying tree rows with
+//'   one-based R indices. The returned \code{solutions} retain these indices.
+//' @param patient_data Observation data frame. Its node list-column uses the
+//'   package's zero-based internal tree indices.
+//' @param node_column Name or one-based position of the node list-column.
+//' @param target_column Name or one-based position of the outcome column.
+//' @param tree Tree data frame in depth-first order.
+//' @param depth_column Name or one-based position of the tree-depth column.
+//' @param id_column Optional name or one-based position of the observation-unit
+//'   identifier. It is required by patient-level continuous-outcome scores.
+//' @param upper_bound_column Optional name or one-based position of the
+//'   zero-based inclusive subtree upper-bound column.
+//' @param name_column Optional name or one-based position of the node-label column.
+//' @param score_type Registered score implementation to evaluate.
+//' @return A list containing the supplied combinations, their scores, coverage
+//'   counts, and score-specific summaries.
+//' @details Candidate vectors deliberately use ordinary one-based R row
+//'   positions at this user-facing boundary. They are checked against the tree
+//'   before being converted once to the zero-based representation used by the
+//'   C++ scoring engine.
 //' @export
 // [[Rcpp::export]]
 Rcpp::List compute_score(
@@ -1093,6 +1169,9 @@ Rcpp::List compute_score(
  tree_structure cppTree(tree, depth_column, upper_bound_column, name_column);
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
  ScoreType Cpp_score_type = parse_score_type(score_type);
+ if (target_type == TargetTypeDetected::CONTINUOUS && Rf_isNull(id_column)) {
+   Rcpp::stop("id_column is required for continuous-outcome scores.");
+ }
  std::vector<Solution> sols;
  sols.reserve(cocktail_list.size());
  
@@ -1103,8 +1182,22 @@ Rcpp::List compute_score(
  std::vector<std::vector<double>> diff_QT_distribution;
  diff_QT_distribution.reserve(cocktail_list.size());
  
- for(const auto& cocktail : cocktail_list){
-   std::vector<int> nodes = Rcpp::as<std::vector<int>>(cocktail);
+ for (R_xlen_t cocktail_index = 0; cocktail_index < cocktail_list.size();
+      ++cocktail_index) {
+   std::vector<int> nodes =
+     Rcpp::as<std::vector<int>>(cocktail_list[cocktail_index]);
+
+   for (int node : nodes) {
+     if (node == NA_INTEGER || node < 1 ||
+         static_cast<size_t>(node) > cppTree.size()) {
+       Rcpp::stop(
+         "cocktail_list[[%i]] contains an invalid tree row; indices must lie "
+         "between 1 and %i.",
+         static_cast<int>(cocktail_index + 1),
+         static_cast<int>(cppTree.size())
+       );
+     }
+   }
    
    // subtract 1 from every element (1-based to 0-based)
    std::transform(nodes.begin(), nodes.end(), nodes.begin(), 

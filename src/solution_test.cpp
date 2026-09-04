@@ -197,6 +197,23 @@ SEXP test_solution_mutate_add_remove_type1(SEXP sol_ptr, SEXP tree_ptr,
 }
 
 //' @keywords internal
+// [[Rcpp::export(.test_solution_mutate_genetic_algorithm)]]
+SEXP test_solution_mutate_genetic_algorithm(SEXP sol_ptr, SEXP tree_ptr,
+                                            double alpha,
+                                            double prob_mutation_type1,
+                                            int seed) {
+ Rcpp::XPtr<Solution> sol(sol_ptr);
+ Rcpp::XPtr<tree_structure> tree(tree_ptr);
+
+ std::mt19937 rng(seed);
+ Solution mutated = sol->mutate_genetic_algorithm(
+   *tree, alpha, prob_mutation_type1, rng
+ );
+ Solution* result = new Solution(mutated);
+ return Rcpp::XPtr<Solution>(result, true);
+}
+
+//' @keywords internal
 // [[Rcpp::export(.test_solution_mutate_replace_type1)]]
 SEXP test_solution_mutate_replace_type1(SEXP sol_ptr, SEXP tree_ptr, int seed) {
  Rcpp::XPtr<Solution> sol(sol_ptr);

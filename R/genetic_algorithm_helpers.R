@@ -165,12 +165,15 @@ map_cocktail_names <- function(aggregated_df, new_tree) {
 #' @param df The data frame from map_cocktail_names.
 #' @param patient_data The dataset used for scoring.
 #' @param tree_df The tree structure data frame.
-#' @param node_id_col Column name in patient_data representing node indices.
-#' @param target_col Column name for the metric (e.g., "QT_c").
-#' @param depth_col Column name for tree depth.
-#' @param upper_bound_col Column name for tree upper bounds.
+#' @param node_column Column in `patient_data` containing zero-based node indices.
+#' @param target_column Column containing the outcome (for example, `"QT_c"`).
+#' @param depth_column Column in `tree_df` containing node depths.
+#' @param upper_bound_column Column in `tree_df` containing zero-based subtree bounds.
 #' @param score_type The scoring method (e.g., "Wilcoxon", "RR", "phyper").
 #' @param ... Additional arguments passed to compute_score.
+#' @param id_column Optional observation-unit identifier required by patient-level
+#'   continuous-outcome scores.
+#' @param name_column Optional node-label column in `tree_df`.
 process_ga_scores <- function(df, 
                               patient_data, 
                               tree_df, 
@@ -179,21 +182,25 @@ process_ga_scores <- function(df,
                               depth_column,
                               upper_bound_column,
                               score_type = "composite",
-                              ...) {
+                              ...,
+                              id_column = NULL,
+                              name_column = NULL) {
   
-  # prepare indices (0-based to 1-based conversion) TODO : remove this once ga
-  # handle the return of 1-based index
+  # The GA returns zero-based candidates, whereas compute_score() deliberately
+  # accepts one-based R row indices at its public boundary.
   indices_list <- lapply(strsplit(df$cocktail, ","), function(x) as.integer(x) + 1)
   
   # compute_score
   raw_scores <- compute_score(
-    indices_list, 
-    patient_data, 
-    node_column, 
-    target_column, 
-    tree_df, 
-    depth_column, 
-    upper_bound_column,
+    cocktail_list = indices_list,
+    patient_data = patient_data,
+    node_column = node_column,
+    target_column = target_column,
+    tree = tree_df,
+    depth_column = depth_column,
+    id_column = id_column,
+    upper_bound_column = upper_bound_column,
+    name_column = name_column,
     score_type = score_type,
     ...
   )

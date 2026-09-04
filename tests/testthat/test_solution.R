@@ -140,7 +140,7 @@ test_that("Solution with parent-child pair is invalid", {
   expect_false(.test_solution_is_valid(sol2, tree))
 })
 
-test_that("Single node solution is always valid", {
+test_that("Single in-range node solutions are valid", {
   tree_df <- data.frame(depth = c(1, 2, 3, 2, 3))
   tree <- .test_create_tree_constructor2(tree_df$depth)
   
@@ -148,6 +148,18 @@ test_that("Single node solution is always valid", {
     sol <- .test_create_solution(node)
     expect_true(.test_solution_is_valid(sol, tree))
   }
+})
+
+test_that("Solution validity checks every node index", {
+  tree <- .test_create_tree_constructor2(c(1, 2, 2))
+
+  expect_false(.test_solution_is_valid(.test_create_solution(-1L), tree))
+  expect_false(.test_solution_is_valid(.test_create_solution(3L), tree))
+  expect_false(.test_solution_is_valid(
+    .test_create_solution(c(-1L, 2L)), tree
+  ))
+  expect_true(.test_solution_is_valid(.test_create_solution(0L), tree))
+  expect_true(.test_solution_is_valid(.test_create_solution(2L), tree))
 })
 
 # ==============================================================================
@@ -252,6 +264,23 @@ test_that("create_random_valid returns different solutions with different seeds"
 # ==============================================================================
 # Mutation Tests: Type 2 Swap
 # ==============================================================================
+
+test_that("genetic mutation dispatcher uses prob_mutation_type1", {
+  # In a flat forest, Type 2 has no parent/child edge and leaves the singleton
+  # unchanged; Type 1 necessarily adds a different root to a singleton.
+  tree <- .test_create_tree_constructor2(rep(1L, 4L))
+  sol <- .test_create_solution(0L)
+
+  type1 <- .test_solution_mutate_genetic_algorithm(
+    sol, tree, alpha = 1, prob_mutation_type1 = 1, seed = 17L
+  )
+  type2 <- .test_solution_mutate_genetic_algorithm(
+    sol, tree, alpha = 1, prob_mutation_type1 = 0, seed = 17L
+  )
+
+  expect_equal(.test_solution_size(type1), 2L)
+  expect_equal(.test_solution_get_nodes(type2), 0L)
+})
 
 test_that("mutate_swap_type2 creates new solution", {
   # Tree: 0 -> [1, 3], 1 -> [2], 3 -> [4]
