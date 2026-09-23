@@ -314,10 +314,14 @@ run_pwp_genetic_algorithm <- function(
 #' @param epochs Number of MCMC iterations.
 #' @param temperature Metropolis-Hastings temperature.
 #' @param n_results Maximum number of retained top solutions.
-#' @param cocktail_size Initial combination size.
+#' @param cocktail_size Fixed combination size.
 #' @param prob_type1 Probability of the first proposal operator.
-#' @param beta Minimum number of distinct covered patients for filtered output.
-#' @param max_score Upper limit used by score-distribution bins.
+#' @param beta Strict threshold: filtered output requires more than beta distinct covered patients.
+#' @inheritParams run_mcmc
+#' @details Uses the MCMC target, importance weights and output format described
+#'   in [run_mcmc()]. The context must use `positive_only = TRUE` so that
+#'   fitness is non-negative. The support filter counts distinct patients.
+#' @return See [run_mcmc()] for the distributions, weight ESS and optional trace.
 #' @export
 run_pwp_mcmc <- function(
     data,
@@ -335,7 +339,9 @@ run_pwp_mcmc <- function(
     beta = 20L,
     max_score = 50,
     seed = 1L,
-    verbose = FALSE) {
+    verbose = FALSE,
+    burn_in = 0L,
+    store_trace = FALSE) {
   analysis_data <- .pwp_analysis_data(data, context)
   tree <- .pwp_tree(tree, depth_column, upper_bound_column, name_column)
   run_mcmc_pwp_cpp(
@@ -348,15 +354,17 @@ run_pwp_mcmc <- function(
     upper_bound_column = upper_bound_column,
     name_column = name_column,
     score_context = context$score_data,
-    epochs = as.integer(epochs),
+    epochs = epochs,
     temperature = temperature,
-    n_results = as.integer(n_results),
-    cocktail_size = as.integer(cocktail_size),
+    n_results = n_results,
+    cocktail_size = cocktail_size,
     prob_type1 = prob_type1,
-    beta = as.integer(beta),
+    beta = beta,
     max_score = max_score,
     seed = as.integer(seed),
-    verbose = verbose
+    verbose = verbose,
+    burn_in = burn_in,
+    store_trace = store_trace
   )
 }
 

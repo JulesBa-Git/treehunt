@@ -2,6 +2,7 @@
 
 #include "genetic_algorithm.h"
 #include "mcmc_algorithm.h"
+#include "mcmc_output.h"
 #include "patient_data.h"
 #include "pwp_score.h"
 #include "solution.h"
@@ -41,43 +42,6 @@ Rcpp::List format_ga_results(const GAResults& results,
           Rcpp::Named("cache_hits") = results.cache_hits));
 }
 
-Rcpp::List format_mcmc_results(const MCMCResults& results) {
-  Rcpp::List top(results.top_solutions.size());
-  for (std::size_t i = 0; i < results.top_solutions.size(); ++i) {
-    top[i] = Rcpp::wrap(results.top_solutions[i]);
-  }
-  Rcpp::List filtered(results.top_solutions_filtered.size());
-  for (std::size_t i = 0; i < results.top_solutions_filtered.size(); ++i) {
-    filtered[i] = Rcpp::wrap(results.top_solutions_filtered[i]);
-  }
-  const double acceptance_rate = results.total_iterations == 0 ? 0.0 :
-      static_cast<double>(results.accepted_moves) /
-      static_cast<double>(results.total_iterations);
-  return Rcpp::List::create(
-      Rcpp::Named("top_solutions") = top,
-      Rcpp::Named("top_scores") = Rcpp::wrap(results.top_scores),
-      Rcpp::Named("top_solutions_filtered") = filtered,
-      Rcpp::Named("top_scores_filtered") =
-          Rcpp::wrap(results.top_scores_filtered),
-      Rcpp::Named("score_distribution") =
-          Rcpp::wrap(results.score_distribution),
-      Rcpp::Named("score_distribution_filtered") =
-          Rcpp::wrap(results.score_distribution_filtered),
-      Rcpp::Named("outstanding_scores") =
-          Rcpp::wrap(results.outstanding_scores),
-      Rcpp::Named("statistics") = Rcpp::List::create(
-          Rcpp::Named("total_iterations") = results.total_iterations,
-          Rcpp::Named("accepted_moves") = results.accepted_moves,
-          Rcpp::Named("rejected_moves") = results.rejected_moves,
-          Rcpp::Named("acceptance_rate") = acceptance_rate,
-          Rcpp::Named("proposals_not_in_population") =
-              results.proposals_not_in_population,
-          Rcpp::Named("type1_moves") = results.type1_moves,
-          Rcpp::Named("type2_moves") = results.type2_moves,
-          Rcpp::Named("type1_accepted") = results.type1_accepted,
-          Rcpp::Named("type2_accepted") = results.type2_accepted,
-          Rcpp::Named("cocktail_size") = results.cocktail_size));
-}
 
 } // namespace
 
@@ -164,15 +128,17 @@ Rcpp::List run_mcmc_pwp_cpp(
     SEXP upper_bound_column,
     SEXP name_column,
     Rcpp::List score_context,
-    std::size_t epochs = 100000,
+    double epochs = 100000,
     double temperature = 1.0,
-    std::size_t n_results = 20,
-    std::size_t cocktail_size = 2,
+    double n_results = 20,
+    double cocktail_size = 2,
     double prob_type1 = 0.01,
-    std::size_t beta = 20,
+    double beta = 20,
     double max_score = 50.0,
     int seed = 1,
-    bool verbose = false) {
+    bool verbose = false,
+    double burn_in = 0,
+    bool store_trace = false) {
   if (epochs == 0 || temperature <= 0.0 || prob_type1 < 0.0 ||
       prob_type1 > 1.0) {
     Rcpp::stop("Invalid MCMC parameter.");
@@ -183,19 +149,21 @@ Rcpp::List run_mcmc_pwp_cpp(
   PWPScoreContext pwp_context(data, score_context);
 
   MCMCParams params;
-  params.epochs = epochs;
+  params.epochs = mcmc_count(epochs, "epochs");
   params.temperature = temperature;
-  params.n_results = n_results;
-  params.cocktail_size = cocktail_size;
+  params.n_results = mcmc_count(n_results, "n_results");
+  params.cocktail_size = mcmc_count(cocktail_size, "cocktail_size");
   params.prob_mutation_type1 = prob_type1;
-  params.beta = beta;
+  params.beta = mcmc_count(beta, "beta");
   params.max_score = max_score;
   params.score_type_ = ScoreType::PWP_RAO;
   params.seed = seed;
   params.verbose = verbose;
+  params.burn_in = mcmc_count(burn_in, "burn_in");
+  params.store_trace = store_trace;
 
   MCMCAlgorithm<int> algorithm(data, params, &pwp_context);
-  Rcpp::List out = format_mcmc_results(algorithm.run());
+  Rcpp::List out = mcmc_output(algorithm.run(), params);
   out["pwp_context_statistics"] = Rcpp::List::create(
       Rcpp::Named("event_time_groups") = pwp_context.number_event_groups(),
       Rcpp::Named("nuisance_covariates") =

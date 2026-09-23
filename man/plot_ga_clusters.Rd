@@ -18,11 +18,11 @@ plot_ga_clusters(cocktails, point_size = 2, alpha = 0.7, ...)
 \value{
 A list containing:
 \itemize{
-  \item \code{data}: The data frame with UMAP coordinates and cluster assignments.
-  \item \code{plot}: A ggplot2 object.
+\item \code{data}: The data frame with UMAP coordinates and cluster assignments.
+\item \code{plot}: A ggplot2 object.
 }
 }
 \description{
-This wrapper runs the clustering pipeline and produces a UMAP scatter plot 
+This wrapper runs the clustering pipeline and produces a UMAP scatter plot
 where points are colored by their identified cluster.
 }

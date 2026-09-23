@@ -20,13 +20,15 @@ run_pwp_mcmc(
   beta = 20L,
   max_score = 50,
   seed = 1L,
-  verbose = FALSE
+  verbose = FALSE,
+  burn_in = 0L,
+  store_trace = FALSE
 )
 }
 \arguments{
-\item{data}{Original interval-level data used to fit `context`.}
+\item{data}{Original interval-level data used to fit \code{context}.}
 
-\item{context}{A `pwp_rao_context`.}
+\item{context}{A \code{pwp_rao_context}.}
 
 \item{tree}{Tree data frame.}
 
@@ -40,18 +42,33 @@ run_pwp_mcmc(
 
 \item{n_results}{Maximum number of retained top solutions.}
 
-\item{cocktail_size}{Initial combination size.}
+\item{cocktail_size}{Fixed combination size.}
 
 \item{prob_type1}{Probability of the first proposal operator.}
 
-\item{beta}{Minimum number of distinct covered patients for filtered output.}
+\item{beta}{Strict threshold: filtered output requires more than beta distinct covered patients.}
 
-\item{max_score}{Upper limit used by score-distribution bins.}
+\item{max_score}{Finite positive cap applied to scores before Metropolis-Hastings
+acceptance, importance weighting and binning. Default: 200.0.}
 
 \item{seed}{Integer seed for the C++ random-number generator.}
 
 \item{verbose}{Whether to print progress.}
+
+\item{burn_in}{Number of initial iterations excluded from all distributions,
+top solutions and the optional trace. Must be smaller than epochs. Default: 0.}
+
+\item{store_trace}{If TRUE, return the retained capped score, support and
+zero-based node vector for each iteration. Default FALSE avoids this storage.}
+}
+\value{
+See \code{\link[=run_mcmc]{run_mcmc()}} for the distributions, weight ESS and optional trace.
 }
 \description{
 Run MCMC with the PWP Rao fitness
+}
+\details{
+Uses the MCMC target, importance weights and output format described
+in \code{\link[=run_mcmc]{run_mcmc()}}. The context must use \code{positive_only = TRUE} so that
+fitness is non-negative. The support filter counts distinct patients.
 }

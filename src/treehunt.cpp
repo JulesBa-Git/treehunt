@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 #include "mcmc_algorithm.h"
+#include "mcmc_output.h"
 #include "genetic_algorithm.h"
 #include "patient_data.h"
 #include "tree_structure.h"
@@ -109,6 +110,8 @@ int parse_optional_seed(SEXP seed) {
 //'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
 //'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 //'   }
+//' @param id_column Optional observation-unit identifier column, given by name
+//'   or one-based position. Required for Wilcoxon and residual patient-level scores.
 //' @param target_column Either a string (column name) or integer (column index, 1-based)
 //'   specifying the target/outcome column. Integer values are treated as binary for now,
 //'   numeric values with non-0/1 entries are treated as continuous.
@@ -122,10 +125,10 @@ int parse_optional_seed(SEXP seed) {
 //' @param cocktail_size Target size of drug combinations to search for. Default: 2.
 //' @param prob_type1 Probability of using Type 1 mutation (random generation) vs
 //'   Type 2 mutation (local swap). Default: 0.01.
-//' @param beta Minimum number of patients that must be covered for a solution to
-//'   be included in the filtered results. Default: 4.
-//' @param max_score Maximum score value for binning in the score distribution.
-//'   Scores above this are tracked separately. Default: 200.0.
+//' @param beta Strict support threshold: filtered results require more than
+//'   beta covered observations (or distinct patients for patient-level scores). Default: 4.
+//' @param max_score Finite positive cap applied to scores before Metropolis-Hastings
+//'   acceptance, importance weighting and binning. Default: 200.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
 //'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
 //'   for the wilcoxon test with continuous output.
@@ -135,66 +138,65 @@ int parse_optional_seed(SEXP seed) {
 //' @param seed Optional non-negative integer seed for the C++ random-number
 //'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
+//' @param burn_in Number of initial iterations excluded from all distributions,
+//'   top solutions and the optional trace. Must be smaller than epochs. Default: 0.
+//' @param store_trace If TRUE, return the retained capped score, support and
+//'   zero-based node vector for each iteration. Default FALSE avoids this storage.
+//'
 //' @return A list containing:
 //'   \describe{
-//'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+//'     \item{top_solutions}{List of zero-based node vectors for the top scoring solutions}
 //'     \item{top_scores}{Numeric vector of scores for the top solutions}
 //'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
 //'     \item{top_scores_filtered}{Scores for the filtered solutions}
-//'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+//'     \item{score_distribution}{Histogram of retained capped scores (0.1-wide bins and a cap bin)}
 //'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
-//'     \item{outstanding_scores}{Scores that exceeded max_score}
+//'     \item{outstanding_scores}{Retained capped scores equal to max_score}
+//'     \item{uniform_reference}{Uniform-reference distribution and weight ESS}
+//'     \item{uniform_reference_filtered}{Support-filtered uniform reference and ESS}
+//'     \item{reference_parameters}{Temperature, score cap, support and burn-in settings}
+//'     \item{trace}{Retained trajectory, only when store_trace is TRUE}
 //'     \item{statistics}{List of run statistics including acceptance rates}
 //'   }
 //'
 //' @details
-//' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
-//' proposal types:
-//' \itemize{
-//'   \item \strong{Type 1}: Generates a completely new random valid solution
-//'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
-//' }
+//' The stationary target on observed subsets of \code{cocktail_size} distinct
+//' nodes is proportional to \eqn{\exp(S(C)/T)}, where \eqn{S} is capped at
+//' \code{max_score}. Ancestor-descendant pairs are included in this MCMC space;
+//' genetic-algorithm validity filtering is a separate operation.
 //'
-//' The acceptance probability for Type 1 proposal is:
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+//' Type 1 proposes a uniform subset of distinct nodes. Type 2 replaces a node
+//' by a parent or child not already in the combination. Its Hastings correction
+//' is \eqn{|V(C)|/|V(C')|}, counting these possible local moves before rejecting
+//' proposals absent from the data. Each acceptance probability is the minimum
+//' of 1 and \eqn{\exp((S(C')-S(C))/T)} times the applicable proposal correction.
+//' A positive \code{prob_type1} connects the observed state space.
 //'
-//' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of P(current | proposed) != P(proposed | current):
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+//' At every retained iteration, including rejected moves, weights proportional
+//' to \eqn{\exp(-S(C)/T)} recover the uniform combination reference. Weights are
+//' computed from exact capped scores before grouping into bins. They are
+//' rescaled internally to avoid numerical underflow. The filtered reference
+//' conditions on support strictly greater than \code{beta}, with its own ESS.
+//' This estimates a uniform law on combinations, not on distinct score values.
 //'
-//' where \eqn{|V|} is the number of possible swap vertices for a solution.
-//'
-//' Solutions are only accepted if they appear in at least one patient's data
-//' ("modified" constraint).
+//' \code{uniform_reference} and \code{uniform_reference_filtered} each contain
+//' \code{distribution}, \code{n_samples}, and \code{weight_ess}. The distribution
+//' columns are \code{lower}, \code{upper}, \code{probability}, \code{cdf} and
+//' \code{upper_tail}. Bins are [lower, upper), except the final singleton bin
+//' at the cap. CDF includes the current bin; upper_tail includes it and all
+//' subsequent bins. Empty references have NA probabilities and ESS.
+//' ESS is \eqn{(\sum w)^2/\sum w^2}; it measures weight concentration and does
+//' not account for MCMC autocorrelation. Check mixing separately and choose
+//' an appropriate \code{burn_in}. See \code{\link{uniform_score_reference}}
+//' for post-processing an optionally stored trace without binning.
 //'
 //' @examples
-//' \dontrun{
-//' # Create example data
-//' patient_df <- data.frame(
-//'   patient_id = 1:100,
-//'   outcome = rbinom(100, 1, 0.3)
-//' )
-//' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
-//'
-//' # Define tree structure (simple 3-level tree)
-//' tree_depth <- c(1, rep(2, 5), rep(3, 15))
-//'
-//' # Run MCMC
-//' results <- run_mcmc(
-//'   patient_data = patient_df,
-//'   node_column = "drugs",
-//'   target_column = "outcome",
-//'   tree_depth = tree_depth,
-//'   epochs = 5000,
-//'   cocktail_size = 2,
-//'   score_type = "hypergeometric",
-//'   verbose = TRUE
-//' )
-//'
-//' # View top results
-//' print(results$top_scores)
-//' print(results$top_solutions)
-//' }
+//' dat <- data.frame(outcome = c(1L, 1L, 0L, 0L))
+//' dat$nodes <- list(c(0L, 1L), 0L, 1L, 1L)
+//' tree <- data.frame(Depth = c(1L, 1L))
+//' result <- run_mcmc(dat, "nodes", "outcome", c(1L, 1L),
+//'   epochs = 100, cocktail_size = 1, seed = 42)
+//' result$uniform_reference$weight_ess
 //'
 //' @export
 // [[Rcpp::export]]
@@ -203,16 +205,19 @@ Rcpp::List run_mcmc(
    SEXP node_column,
    SEXP target_column,
    Rcpp::IntegerVector tree_depth,
-   size_t epochs,
+   double epochs,
    double temperature = 1.0,
-   size_t n_results = 10,
-   size_t cocktail_size = 2,
+   double n_results = 10,
+   double cocktail_size = 2,
    double prob_type1 = 0.01,
-   size_t beta = 4,
+   double beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric",
    bool verbose = false,
-   SEXP seed = R_NilValue) {
+   SEXP seed = R_NilValue,
+   double burn_in = 0,
+   bool store_trace = false,
+   SEXP id_column = R_NilValue) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -236,71 +241,34 @@ Rcpp::List run_mcmc(
  
  // Setup MCMC parameters
  MCMCParams params;
- params.epochs = epochs;
+ params.epochs = mcmc_count(epochs, "epochs");
  params.temperature = temperature;
- params.n_results = n_results;
- params.cocktail_size = cocktail_size;
+ params.n_results = mcmc_count(n_results, "n_results");
+ params.cocktail_size = mcmc_count(cocktail_size, "cocktail_size");
  params.prob_mutation_type1 = prob_type1;
- params.beta = beta;
+ params.beta = mcmc_count(beta, "beta");
  params.max_score = max_score;
  params.score_type_ = parse_score_type(score_type);
  params.verbose = verbose;
  params.seed = parse_optional_seed(seed);
+ params.burn_in = mcmc_count(burn_in, "burn_in");
+ params.store_trace = store_trace;
  
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
  MCMCResults results;
  
  if (target_type == TargetTypeDetected::BINARY) {
-   PatientData<int> data(patient_data, node_column, target_column, tree);
+   PatientData<int> data(patient_data, node_column, target_column, tree, id_column);
    MCMCAlgorithm<int> algorithm(data, params);
    results = algorithm.run();
  } else {
-   PatientData<double> data(patient_data, node_column, target_column, tree);
+   PatientData<double> data(patient_data, node_column, target_column, tree, id_column);
    MCMCAlgorithm<double> algorithm(data, params);
    results = algorithm.run();
  }
  
- // Convert top_solutions to R list
- Rcpp::List top_solutions_list(results.top_solutions.size());
- for (size_t i = 0; i < results.top_solutions.size(); ++i) {
-   top_solutions_list[i] = Rcpp::wrap(results.top_solutions[i]);
- }
- 
- Rcpp::List top_solutions_filtered_list(results.top_solutions_filtered.size());
- for (size_t i = 0; i < results.top_solutions_filtered.size(); ++i) {
-   top_solutions_filtered_list[i] = Rcpp::wrap(results.top_solutions_filtered[i]);
- }
- 
- // Build statistics list
- Rcpp::List statistics = Rcpp::List::create(
-   Rcpp::Named("total_iterations") = results.total_iterations,
-   Rcpp::Named("accepted_moves") = results.accepted_moves,
-   Rcpp::Named("rejected_moves") = results.rejected_moves,
-   Rcpp::Named("acceptance_rate") = static_cast<double>(results.accepted_moves) / 
-     static_cast<double>(results.total_iterations),
-     Rcpp::Named("proposals_not_in_population") = results.proposals_not_in_population,
-     Rcpp::Named("type1_moves") = results.type1_moves,
-     Rcpp::Named("type2_moves") = results.type2_moves,
-     Rcpp::Named("type1_accepted") = results.type1_accepted,
-     Rcpp::Named("type2_accepted") = results.type2_accepted,
-     Rcpp::Named("type1_in_population") = results.type1_in_population,
-     Rcpp::Named("type2_in_population") = results.type2_in_population,
-     Rcpp::Named("cocktail_size") = results.cocktail_size,
-     Rcpp::Named("seed") =
-       (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
- );
- 
- return Rcpp::List::create(
-   Rcpp::Named("top_solutions") = top_solutions_list,
-   Rcpp::Named("top_scores") = Rcpp::wrap(results.top_scores),
-   Rcpp::Named("top_solutions_filtered") = top_solutions_filtered_list,
-   Rcpp::Named("top_scores_filtered") = Rcpp::wrap(results.top_scores_filtered),
-   Rcpp::Named("score_distribution") = Rcpp::wrap(results.score_distribution),
-   Rcpp::Named("score_distribution_filtered") = Rcpp::wrap(results.score_distribution_filtered),
-   Rcpp::Named("outstanding_scores") = Rcpp::wrap(results.outstanding_scores),
-   Rcpp::Named("statistics") = statistics
- );
+ return mcmc_output(results, params);
 }
 
 // Genetic Algorithm Interface
@@ -540,6 +508,8 @@ Rcpp::List run_genetic_algorithm(
 //'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
 //'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 //'   }
+//' @param id_column Optional observation-unit identifier column, given by name
+//'   or one-based column position; needed for patient-level scoring.
 //' @param target_column Either a string (column name) or integer (column index, 1-based)
 //'   specifying the target/outcome column. Integer values are treated as binary for now,
 //'   numeric values with non-0/1 entries are treated as continuous.
@@ -559,10 +529,10 @@ Rcpp::List run_genetic_algorithm(
 //' @param cocktail_size Target size of drug combinations to search for. Default: 2.
 //' @param prob_type1 Probability of using Type 1 mutation (random generation) vs
 //'   Type 2 mutation (local swap). Default: 0.01.
-//' @param beta Minimum number of patients that must be covered for a solution to
-//'   be included in the filtered results. Default: 4.
-//' @param max_score Maximum score value for binning in the score distribution.
-//'   Scores above this are tracked separately. Default: 200.0.
+//' @param beta Strict support threshold: filtered results require more than
+//'   beta covered observations (or distinct patients for patient-level scores). Default: 4.
+//' @param max_score Finite positive cap applied to scores before Metropolis-Hastings
+//'   acceptance, importance weighting and binning. Default: 200.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
 //'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
 //'   for the wilcoxon test with continuous output.
@@ -572,67 +542,65 @@ Rcpp::List run_genetic_algorithm(
 //' @param seed Optional non-negative integer seed for the C++ random-number
 //'   generator. If \code{NULL}, the generator is initialized non-deterministically.
 //'
+//' @param burn_in Number of initial iterations excluded from all distributions,
+//'   top solutions and the optional trace. Must be smaller than epochs. Default: 0.
+//' @param store_trace If TRUE, return the retained capped score, support and
+//'   zero-based node vector for each iteration. Default FALSE avoids this storage.
+//'
 //' @return A list containing:
 //'   \describe{
-//'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+//'     \item{top_solutions}{List of zero-based node vectors for the top scoring solutions}
 //'     \item{top_scores}{Numeric vector of scores for the top solutions}
 //'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
 //'     \item{top_scores_filtered}{Scores for the filtered solutions}
-//'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+//'     \item{score_distribution}{Histogram of retained capped scores (0.1-wide bins and a cap bin)}
 //'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
-//'     \item{outstanding_scores}{Scores that exceeded max_score}
+//'     \item{outstanding_scores}{Retained capped scores equal to max_score}
+//'     \item{uniform_reference}{Uniform-reference distribution and weight ESS}
+//'     \item{uniform_reference_filtered}{Support-filtered uniform reference and ESS}
+//'     \item{reference_parameters}{Temperature, score cap, support and burn-in settings}
+//'     \item{trace}{Retained trajectory, only when store_trace is TRUE}
 //'     \item{statistics}{List of run statistics including acceptance rates}
 //'   }
 //'
 //' @details
-//' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
-//' proposal types:
-//' \itemize{
-//'   \item \strong{Type 1}: Generates a completely new random valid solution
-//'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
-//' }
+//' The stationary target on observed subsets of \code{cocktail_size} distinct
+//' nodes is proportional to \eqn{\exp(S(C)/T)}, where \eqn{S} is capped at
+//' \code{max_score}. Ancestor-descendant pairs are included in this MCMC space;
+//' genetic-algorithm validity filtering is a separate operation.
 //'
-//' The acceptance probability for Type 1 proposal is:
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+//' Type 1 proposes a uniform subset of distinct nodes. Type 2 replaces a node
+//' by a parent or child not already in the combination. Its Hastings correction
+//' is \eqn{|V(C)|/|V(C')|}, counting these possible local moves before rejecting
+//' proposals absent from the data. Each acceptance probability is the minimum
+//' of 1 and \eqn{\exp((S(C')-S(C))/T)} times the applicable proposal correction.
+//' A positive \code{prob_type1} connects the observed state space.
 //'
-//' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of P(current | proposed) != P(proposed | current):
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+//' At every retained iteration, including rejected moves, weights proportional
+//' to \eqn{\exp(-S(C)/T)} recover the uniform combination reference. Weights are
+//' computed from exact capped scores before grouping into bins. They are
+//' rescaled internally to avoid numerical underflow. The filtered reference
+//' conditions on support strictly greater than \code{beta}, with its own ESS.
+//' This estimates a uniform law on combinations, not on distinct score values.
 //'
-//' where \eqn{|V|} is the number of possible swap vertices for a solution.
-//'
-//' Solutions are only accepted if they appear in at least one patient's data
-//' ("modified" constraint).
+//' \code{uniform_reference} and \code{uniform_reference_filtered} each contain
+//' \code{distribution}, \code{n_samples}, and \code{weight_ess}. The distribution
+//' columns are \code{lower}, \code{upper}, \code{probability}, \code{cdf} and
+//' \code{upper_tail}. Bins are [lower, upper), except the final singleton bin
+//' at the cap. CDF includes the current bin; upper_tail includes it and all
+//' subsequent bins. Empty references have NA probabilities and ESS.
+//' ESS is \eqn{(\sum w)^2/\sum w^2}; it measures weight concentration and does
+//' not account for MCMC autocorrelation. Check mixing separately and choose
+//' an appropriate \code{burn_in}. See \code{\link{uniform_score_reference}}
+//' for post-processing an optionally stored trace without binning.
 //'
 //' @examples
-//' \dontrun{
-//' # Create example data
-//' patient_df <- data.frame(
-//'   patient_id = 1:100,
-//'   outcome = rbinom(100, 1, 0.3)
-//' )
-//' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
-//'
-//' # Define tree structure (simple 3-level tree)
-//' tree_depth <- c(1, rep(2, 5), rep(3, 15))
-//'
-//' # Run MCMC
-//' results <- run_mcmc(
-//'   patient_data = patient_df,
-//'   node_column = "drugs",
-//'   target_column = "outcome",
-//'   tree = tree_df,
-//'   depth_column = "depth_level", # or 2
-//'   epochs = 5000,
-//'   cocktail_size = 2,
-//'   score_type = "hypergeometric",
-//'   verbose = TRUE
-//' )
-//'
-//' # View top results
-//' print(results$top_scores)
-//' print(results$top_solutions)
-//' }
+//' dat <- data.frame(outcome = c(1L, 1L, 0L, 0L))
+//' dat$nodes <- list(c(0L, 1L), 0L, 1L, 1L)
+//' tree <- data.frame(Depth = c(1L, 1L))
+//' result <- run_mcmc_df_tree(dat, "nodes", "outcome", tree, "Depth",
+//'   epochs = 100, cocktail_size = 1, seed = 42)
+//' result$uniform_reference$weight_ess
 //'
 //' @export
 // [[Rcpp::export]]
@@ -645,16 +613,18 @@ Rcpp::List run_mcmc_df_tree(
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
    SEXP id_column = R_NilValue,
-   size_t epochs = 1e6,
+   double epochs = 1e6,
    double temperature = 1.0,
-   size_t n_results = 10,
-   size_t cocktail_size = 2,
+   double n_results = 10,
+   double cocktail_size = 2,
    double prob_type1 = 0.01,
-   size_t beta = 4,
+   double beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric",
    bool verbose = false,
-   SEXP seed = R_NilValue) {
+   SEXP seed = R_NilValue,
+   double burn_in = 0,
+   bool store_trace = false) {
  
  // Validate inputs
  if (patient_data.nrows() == 0) {
@@ -678,16 +648,18 @@ Rcpp::List run_mcmc_df_tree(
  
  // Setup MCMC parameters
  MCMCParams params;
- params.epochs = epochs;
+ params.epochs = mcmc_count(epochs, "epochs");
  params.temperature = temperature;
- params.n_results = n_results;
- params.cocktail_size = cocktail_size;
+ params.n_results = mcmc_count(n_results, "n_results");
+ params.cocktail_size = mcmc_count(cocktail_size, "cocktail_size");
  params.prob_mutation_type1 = prob_type1;
- params.beta = beta;
+ params.beta = mcmc_count(beta, "beta");
  params.max_score = max_score;
  params.score_type_ = parse_score_type(score_type);
  params.verbose = verbose;
  params.seed = parse_optional_seed(seed);
+ params.burn_in = mcmc_count(burn_in, "burn_in");
+ params.store_trace = store_trace;
  
  // Detect target type and run appropriate template
  TargetTypeDetected target_type = detect_target_type(patient_data, target_column);
@@ -705,46 +677,7 @@ Rcpp::List run_mcmc_df_tree(
    results = algorithm.run();
  }
  
- // Convert top_solutions to R list
- Rcpp::List top_solutions_list(results.top_solutions.size());
- for (size_t i = 0; i < results.top_solutions.size(); ++i) {
-   top_solutions_list[i] = Rcpp::wrap(results.top_solutions[i]);
- }
- 
- Rcpp::List top_solutions_filtered_list(results.top_solutions_filtered.size());
- for (size_t i = 0; i < results.top_solutions_filtered.size(); ++i) {
-   top_solutions_filtered_list[i] = Rcpp::wrap(results.top_solutions_filtered[i]);
- }
- 
- // Build statistics list
- Rcpp::List statistics = Rcpp::List::create(
-   Rcpp::Named("total_iterations") = results.total_iterations,
-   Rcpp::Named("accepted_moves") = results.accepted_moves,
-   Rcpp::Named("rejected_moves") = results.rejected_moves,
-   Rcpp::Named("acceptance_rate") = static_cast<double>(results.accepted_moves) / 
-     static_cast<double>(results.total_iterations),
-     Rcpp::Named("proposals_not_in_population") = results.proposals_not_in_population,
-     Rcpp::Named("type1_moves") = results.type1_moves,
-     Rcpp::Named("type2_moves") = results.type2_moves,
-     Rcpp::Named("type1_accepted") = results.type1_accepted,
-     Rcpp::Named("type2_accepted") = results.type2_accepted,
-     Rcpp::Named("type1_in_population") = results.type1_in_population,
-     Rcpp::Named("type2_in_population") = results.type2_in_population,
-     Rcpp::Named("cocktail_size") = results.cocktail_size,
-     Rcpp::Named("seed") =
-       (params.seed >= 0 ? Rcpp::wrap(params.seed) : R_NilValue)
- );
- 
- return Rcpp::List::create(
-   Rcpp::Named("top_solutions") = top_solutions_list,
-   Rcpp::Named("top_scores") = Rcpp::wrap(results.top_scores),
-   Rcpp::Named("top_solutions_filtered") = top_solutions_filtered_list,
-   Rcpp::Named("top_scores_filtered") = Rcpp::wrap(results.top_scores_filtered),
-   Rcpp::Named("score_distribution") = Rcpp::wrap(results.score_distribution),
-   Rcpp::Named("score_distribution_filtered") = Rcpp::wrap(results.score_distribution_filtered),
-   Rcpp::Named("outstanding_scores") = Rcpp::wrap(results.outstanding_scores),
-   Rcpp::Named("statistics") = statistics
- );
+ return mcmc_output(results, params);
 }
 
 
@@ -758,6 +691,8 @@ Rcpp::List run_mcmc_df_tree(
 //' @param patient_data A data.frame containing patient information.
 //' @param node_column Either a string (column name) or integer (1-based index)
 //'   specifying the column containing node indexes (list of vectors or comma-separated strings).
+//' @param id_column Optional observation-unit identifier column, given by name
+//'   or one-based column position; needed for patient-level scoring.
 //' @param target_column Either a string (column name) or integer (1-based index)
 //'   specifying the target/outcome column.
 //' @param tree A data.frame containing the structural definition of the tree.
@@ -961,6 +896,8 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //'     \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
 //'     \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 //'   }
+//' @param id_column Optional observation-unit identifier column, given by name
+//'   or one-based column position; needed for patient-level scoring.
 //' @param target_column Either a string (column name) or integer (column index, 1-based)
 //'   specifying the target/outcome column. Integer values are treated as binary for now,
 //'   numeric values with non-0/1 entries are treated as continuous.
@@ -973,10 +910,10 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //' @param name_column (Optional) Either a string or integer (1-based index) 
 //'  specifying the column in \code{tree} that contains the corresponding name
 //'  of nodes. Defaults to \code{NULL}.
-//' @param beta Minimum number of patients that must be covered for a solution to
-//'   be included in the filtered results. Default: 4.
-//' @param max_score Maximum score value for binning in the score distribution.
-//'   Scores above this are tracked separately. Default: 200.0.
+//' @param beta Strict support threshold: filtered results require more than
+//'   beta covered observations (or distinct patients for patient-level scores). Default: 4.
+//' @param max_score Finite positive cap applied to scores before Metropolis-Hastings
+//'   acceptance, importance weighting and binning. Default: 200.0.
 //' @param score_type Scoring function to use. Either "hypergeometric" for the
 //'   hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
 //'   for the wilcoxon test with continuous output.
@@ -984,61 +921,35 @@ Rcpp::List run_genetic_algorithm_df_tree(
 //'
 //' @return A list containing:
 //'   \describe{
-//'     \item{top_solutions}{List of node vectors for the top scoring solutions}
+//'     \item{top_solutions}{List of zero-based node vectors for the top scoring solutions}
 //'     \item{top_scores}{Numeric vector of scores for the top solutions}
 //'     \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
 //'     \item{top_scores_filtered}{Scores for the filtered solutions}
-//'     \item{score_distribution}{Histogram of scores (0.1-wide bins)}
+//'     \item{score_distribution}{Histogram of retained capped scores (0.1-wide bins and a cap bin)}
 //'     \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
-//'     \item{outstanding_scores}{Scores that exceeded max_score}
+//'     \item{outstanding_scores}{Retained capped scores equal to max_score}
+//'     \item{uniform_reference}{Uniform-reference distribution and weight ESS}
+//'     \item{uniform_reference_filtered}{Support-filtered uniform reference and ESS}
+//'     \item{reference_parameters}{Temperature, score cap, support and burn-in settings}
+//'     \item{trace}{Retained trajectory, only when store_trace is TRUE}
 //'     \item{statistics}{List of run statistics including acceptance rates}
 //'   }
 //'
 //' @details
-//' The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
-//' proposal types:
-//' \itemize{
-//'   \item \strong{Type 1}: Generates a completely new random valid solution
-//'   \item \strong{Type 2}: Swaps one node with its parent or child in the tree
-//' }
-//'
-//' The acceptance probability for Type 1 proposal is:
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
-//'
-//' For Type 2 proposals, a proposal ratio correction is applied since the ratio
-//' of P(current | proposed) != P(proposed | current):
-//' \deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
-//'
-//' where \eqn{|V|} is the number of possible swap vertices for a solution.
-//'
-//' Solutions are only accepted if they appear in at least one patient's data
-//' ("modified" constraint).
+//' Enumerates each unordered pair of distinct nodes exactly once and retains
+//' pairs present in at least one observation, including ancestor-descendant
+//' pairs. It uses the same state space, cap and strict support filter as
+//' \code{run_mcmc_df_tree(cocktail_size = 2)}. No MCMC or importance weighting
+//' is performed: each enumerated pair has unit weight. The returned
+//' \code{uniform_reference} is exact; its \code{weight_ess} equals the number
+//' of enumerated pairs. Acceptance statistics are not applicable.
 //'
 //' @examples
-//' \dontrun{
-//' # Create example data
-//' patient_df <- data.frame(
-//'   patient_id = 1:100,
-//'   outcome = rbinom(100, 1, 0.3)
-//' )
-//' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
-//'
-//' # Define tree structure (simple 3-level tree)
-//' tree_depth <- c(1, rep(2, 5), rep(3, 15))
-//'
-//' # Run MCMC
-//' results <- mcmc_size_2_true_score_distribution(
-//'   patient_data = patient_df,
-//'   node_column = "drugs",
-//'   target_column = "outcome",
-//'   tree = tree_df,
-//'   depth_column = "depth_level", # or 2
-//'   score_type = "hypergeometric"
-//' )
-//'
-//' # View top results
-//' print(results$score_distribution)
-//' }
+//' dat <- data.frame(outcome = c(1L, 1L, 0L, 0L))
+//' dat$nodes <- list(c(0L, 1L), 0L, 1L, 1L)
+//' tree <- data.frame(Depth = c(1L, 1L))
+//' result <- mcmc_size_2_true_score_distribution(dat, "nodes", "outcome", tree, "Depth")
+//' result$uniform_reference$weight_ess
 //'
 //' @export
 // [[Rcpp::export]]
@@ -1051,7 +962,7 @@ Rcpp::List mcmc_size_2_true_score_distribution(
    SEXP upper_bound_column = R_NilValue,
    SEXP name_column = R_NilValue,
    SEXP id_column = R_NilValue,
-   size_t beta = 4,
+   double beta = 4,
    double max_score = 200.0,
    std::string score_type = "hypergeometric") {
  
@@ -1070,7 +981,7 @@ Rcpp::List mcmc_size_2_true_score_distribution(
  // Setup MCMC parameters
  MCMCParams params;
  params.cocktail_size = 2;
- params.beta = beta;
+ params.beta = mcmc_count(beta, "beta");
  params.max_score = max_score;
  params.score_type_ = parse_score_type(score_type);
  
@@ -1089,44 +1000,7 @@ Rcpp::List mcmc_size_2_true_score_distribution(
    results = algorithm.true_size2_distribution();
  }
  
- // Convert top_solutions to R list
- Rcpp::List top_solutions_list(results.top_solutions.size());
- for (size_t i = 0; i < results.top_solutions.size(); ++i) {
-   top_solutions_list[i] = Rcpp::wrap(results.top_solutions[i]);
- }
- 
- Rcpp::List top_solutions_filtered_list(results.top_solutions_filtered.size());
- for (size_t i = 0; i < results.top_solutions_filtered.size(); ++i) {
-   top_solutions_filtered_list[i] = Rcpp::wrap(results.top_solutions_filtered[i]);
- }
- 
- 
- Rcpp::List statistics = Rcpp::List::create(
-   Rcpp::Named("total_iterations") = results.total_iterations,
-   Rcpp::Named("accepted_moves") = results.accepted_moves,
-   Rcpp::Named("rejected_moves") = results.rejected_moves,
-   Rcpp::Named("acceptance_rate") = static_cast<double>(results.accepted_moves) / 
-     static_cast<double>(results.total_iterations),
-     Rcpp::Named("proposals_not_in_population") = results.proposals_not_in_population,
-     Rcpp::Named("type1_moves") = results.type1_moves,
-     Rcpp::Named("type2_moves") = results.type2_moves,
-     Rcpp::Named("type1_accepted") = results.type1_accepted,
-     Rcpp::Named("type2_accepted") = results.type2_accepted,
-     Rcpp::Named("type1_in_population") = results.type1_in_population,
-     Rcpp::Named("type2_in_population") = results.type2_in_population,
-     Rcpp::Named("cocktail_size") = results.cocktail_size
- );
- 
- return Rcpp::List::create(
-   Rcpp::Named("top_solutions") = top_solutions_list,
-   Rcpp::Named("top_scores") = Rcpp::wrap(results.top_scores),
-   Rcpp::Named("top_solutions_filtered") = top_solutions_filtered_list,
-   Rcpp::Named("top_scores_filtered") = Rcpp::wrap(results.top_scores_filtered),
-   Rcpp::Named("score_distribution") = Rcpp::wrap(results.score_distribution),
-   Rcpp::Named("score_distribution_filtered") = Rcpp::wrap(results.score_distribution_filtered),
-   Rcpp::Named("outstanding_scores") = Rcpp::wrap(results.outstanding_scores),
-   Rcpp::Named("statistics") = statistics
- );
+ return mcmc_output(results, params);
 }
 
 
@@ -1269,6 +1143,9 @@ Rcpp::List compute_score(
 
 
 //' Compute the dissimilarity matrix on a list of cocktails
+//'
+//' @inheritParams compute_score
+//' @return A symmetric numeric matrix of normalized greedy tree-edit dissimilarities.
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericMatrix get_dissimilarity_of_list(
@@ -1306,8 +1183,15 @@ Rcpp::NumericMatrix get_dissimilarity_of_list(
   return results;
 }
 
-//' Temporary helpers : Used to get the takers of a cocktail or cocktail list in
-//' order to get a sense of the used medications as the ndc are mapped to ATC4
+//' Identify observations covered by hierarchical combinations
+//'
+//' @inheritParams compute_score
+//' @param cocktail_list List of zero-based node-index vectors.
+//' @param id_column Name of the integer patient identifier column.
+//' @param hadm_column Name of the integer admission identifier column.
+//' @return A list with the supplied combinations (`cocktail_list`), distinct
+//'   patient identifiers (`Takers_set`), admission identifiers (`hadm_set`),
+//'   and one-based observation rows (`idx_set`) for each combination.
 //' @export
 // [[Rcpp::export]]
 Rcpp::List get_taker(

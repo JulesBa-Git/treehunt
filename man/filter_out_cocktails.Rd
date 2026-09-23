@@ -2,8 +2,8 @@
 % Please edit documentation in R/genetic_algorithm_helpers.R
 \name{filter_out_cocktails}
 \alias{filter_out_cocktails}
-\title{Filter a list of cocktails accoring to the mean depth of nodes inside 
-each cocktail. A cocktail is kept if the mean depth of his nodes is greater 
+\title{Filter a list of cocktails accoring to the mean depth of nodes inside
+each cocktail. A cocktail is kept if the mean depth of his nodes is greater
 than \code{mean_depth_cocktail} (default = 3). This function aim is to provide
 more interpretable cocktail to the user.}
 \usage{
@@ -15,7 +15,7 @@ filter_out_cocktails(
 )
 }
 \arguments{
-\item{results}{results returned by function \code{summarize_ga_pipeline}. Or a 
+\item{results}{results returned by function \code{summarize_ga_pipeline}. Or a
 list of string of 0 indexed vector of tree nodes. (If nodes are 1-indexed, make sure that the parameter
 one_index is set to TRUE).}
 
@@ -23,14 +23,14 @@ one_index is set to TRUE).}
 
 \item{mean_depth_cocktail}{The desired minimal mean depth of nodes in a cocktail.}
 
-\item{one_index}{A boolean telling if the cocktails are 1-indexed or 0-indexed. Default is TRUE}
+\item{one_index}{A boolean telling if the cocktails are 1-indexed or 0-indexed. Default is FALSE}
 }
 \value{
 The filtered list of cocktail
 }
 \description{
-Filter a list of cocktails accoring to the mean depth of nodes inside 
-each cocktail. A cocktail is kept if the mean depth of his nodes is greater 
+Filter a list of cocktails accoring to the mean depth of nodes inside
+each cocktail. A cocktail is kept if the mean depth of his nodes is greater
 than \code{mean_depth_cocktail} (default = 3). This function aim is to provide
 more interpretable cocktail to the user.
 }

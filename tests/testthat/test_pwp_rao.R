@@ -100,4 +100,13 @@ test_that("PWP genetic algorithm is reproducible with a fixed C++ seed", {
   second <- suppressWarnings(run_once())
   expect_identical(first$final_population, second$final_population)
   expect_equal(first$final_scores, second$final_scores, tolerance = 0)
+  mcmc <- run_pwp_mcmc(dat, context, tree, epochs = 100, burn_in = 10,
+                       cocktail_size = 1, seed = 123, store_trace = TRUE)
+  expect_equal(mcmc$uniform_reference$n_samples, 90)
+  post <- uniform_score_reference(mcmc$trace$score)
+  expect_equal(mcmc$uniform_reference$weight_ess, post$weight_ess, tolerance = 1e-10)
+  selected <- mcmc$trace$score[mcmc$trace$covered_patients > 20]
+  expect_equal(mcmc$uniform_reference_filtered$weight_ess,
+               uniform_score_reference(selected)$weight_ess, tolerance = 1e-10)
+
 })

@@ -47,6 +47,7 @@ max_depth_{} {
   
   check_depth();
   initialize_upper_bound();
+  compute_father();
 }
 
 void tree_structure::initialize_upper_bound() {
@@ -117,6 +118,7 @@ void tree_structure::compute_father(){
 bool tree_structure::check_depth() const {
   int prev_dep = 0;
   for (const auto dep : depth_) {
+    if (dep < 1) Rcpp::stop("Tree depths must be positive integers.");
     // if we go on a son, his depth should be strictly one more than our
     if (dep > prev_dep && dep != prev_dep + 1) {
       Rcpp::stop("The son of a node must be in the next depth of the tree.");

@@ -20,6 +20,8 @@ run_ga_batch(
 
 \item{tree_df}{The data frame defining the tree structure.}
 
+\item{seed_population}{Optional initial combinations, using one-based tree indices.}
+
 \item{replicates}{Number of times to run each configuration. Default is 5.}
 
 \item{output_dir}{Directory where result JSONs will be saved.}

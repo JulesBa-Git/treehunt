@@ -1,24 +1,25 @@
 Package: treehunt
 Type: Package
-Title: Evolutionary Search for Optimal Node Combinations in Tree
+Title: Evolutionary Search for Optimal Node Combinations in Trees
 Version: 0.0.1
-Date: 2025-11-05
 Authors@R: person("Jules", "Bangard", role = c("aut", "cre"), email = "jules.bangard@etu.unistra.fr")
 Author: Jules Bangard [aut, cre]
 Maintainer: Jules Bangard <jules.bangard@etu.unistra.fr>
-Description: Implements hybrid evolutionary Markov Chain Monte Carlo (MCMC) and 
-    genetic algorithm methods to search through hierarchical tree structures for 
-    node combinations that optimize user-defined criteria. Originally developed 
-    for pharmacovigilance applications to identify ATC (Anatomical Therapeutic 
-    Chemical) code combinations maximizing relative risk, the package generalizes 
-    to any tree hierarchy and optimization metric. Efficient C++ implementation 
-    via 'Rcpp' enables exploration of large combinatorial spaces.
-License: GPL (>= 2)
+Description: Provides Markov chain Monte Carlo (MCMC) sampling and genetic
+    algorithms for searching combinations of nodes in hierarchical trees.
+    Includes scores for binary outcomes, continuous outcomes, and recurrent
+    events, with applications to pharmacovigilance and hospital data.
+    Importance weighting estimates uniform combination score references from
+    tempered MCMC samples and reports weight-based effective sample sizes.
+    Computational routines are implemented in C++ via 'Rcpp'.
+License: GPL-3
 Imports: Rcpp (>= 1.1.0), jsonlite, survival
 LinkingTo: Rcpp
 Encoding: UTF-8
 RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
 URL: https://github.com/JulesBa-Git/treehunt
 BugReports: https://github.com/JulesBa-Git/treehunt/issues
-Suggests: testthat (>= 3.0.0) 
+Suggests: testthat (>= 3.0.0), umap, dbscan, ggplot2
 Config/testthat/edition: 3
+SystemRequirements: C++17

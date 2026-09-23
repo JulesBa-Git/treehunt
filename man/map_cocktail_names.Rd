@@ -3,21 +3,19 @@
 \name{map_cocktail_names}
 \alias{map_cocktail_names}
 \title{Map Cocktail Indices to Names
-TODO : Results of GA are 0 based index for now, they will be change in a near future
-when this is done, remove the cpp to R index conversion}
+Saved GA combinations use zero-based node indices; tree rows use one-based indices.}
 \usage{
 map_cocktail_names(aggregated_df, new_tree)
 }
 \arguments{
 \item{aggregated_df}{The data frame returned by aggregate_ga_results.}
 
-\item{new_tree}{The data frame containing the tree structure and $Name column.}
+\item{new_tree}{Tree data frame with \code{Name} and \code{Code} columns.}
 }
 \value{
-The same data frame with a new 'cocktail_names' column.
+The data frame with \code{cocktail_names} and \code{cocktail_codes} columns.
 }
 \description{
 Map Cocktail Indices to Names
-TODO : Results of GA are 0 based index for now, they will be change in a near future
-when this is done, remove the cpp to R index conversion
+Saved GA combinations use zero-based node indices; tree rows use one-based indices.
 }

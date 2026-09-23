@@ -123,7 +123,7 @@ test_that("PatientData hierarchical matching works", {
 })
 
 test_that("PatientData handles edge cases", {
-  tree_df <- data.frame(depth = c(0, 1, 1))
+  tree_df <- data.frame(depth = c(1, 2, 2))
   tree <- make_test_tree_ctr2(tree_df$depth)
   
   # Empty node list for a patient
@@ -142,7 +142,7 @@ test_that("PatientData handles edge cases", {
 })
 
 test_that("PatientData column specification works by name and index", {
-  tree_df <- data.frame(depth = c(0, 1, 1))
+  tree_df <- data.frame(depth = c(1, 2, 2))
   tree <- make_test_tree_ctr2(tree_df$depth)
   
   patient_df <- data.frame(
@@ -162,7 +162,7 @@ test_that("PatientData column specification works by name and index", {
 })
 
 test_that("PatientData validates input properly", {
-  tree_df <- data.frame(depth = c(0, 1, 1))
+  tree_df <- data.frame(depth = c(1, 2, 2))
   tree <- make_test_tree_ctr2(tree_df$depth)
   
   # Empty DataFrame

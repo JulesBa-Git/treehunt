@@ -48,8 +48,12 @@ clustering_genetic_algorithm <- function(cocktails,
                                          eps_dbscan = 0.2,
                                          min_pts_dbscan = 5) {
   
-  requireNamespace("umap", quietly = TRUE)
-  requireNamespace("dbscan", quietly = TRUE)
+  if (!requireNamespace("umap", quietly = TRUE)) {
+    stop("Install the optional package 'umap' to use this function.", call. = FALSE)
+  }
+  if (!requireNamespace("dbscan", quietly = TRUE)) {
+    stop("Install the optional package 'dbscan' to use this function.", call. = FALSE)
+  }
   
   # Work with either a list or a data-frame list-column.
   working_list <- .extract_cocktail_list(cocktails)
@@ -113,12 +117,16 @@ plot_ga_clusters <- function(cocktails,
                              alpha = 0.7, 
                              ...) {
   
-  requireNamespace("ggplot2", quietly = TRUE)
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("Install the optional package 'ggplot2' to use this function.", call. = FALSE)
+  }
   
   # Run the clustering logic
   clustered_data <- clustering_genetic_algorithm(cocktails = cocktails, ...)
   clustered_data$cluster <- as.factor(clustered_data$cluster)
   
+  # Names used by ggplot2 data masking.
+  UMAP1 <- UMAP2 <- cluster <- NULL
   # Plot
   p <- ggplot2::ggplot(clustered_data, 
                        ggplot2::aes(x = UMAP1, y = UMAP2, color = cluster)) +

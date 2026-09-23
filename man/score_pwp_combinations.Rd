@@ -19,9 +19,9 @@ score_pwp_combinations(
 \arguments{
 \item{combinations}{List of node-index vectors.}
 
-\item{data}{Original interval-level data used to fit `context`.}
+\item{data}{Original interval-level data used to fit \code{context}.}
 
-\item{context}{A `pwp_rao_context`.}
+\item{context}{A \code{pwp_rao_context}.}
 
 \item{tree}{Tree data frame.}
 

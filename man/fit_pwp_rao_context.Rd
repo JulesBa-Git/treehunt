@@ -34,9 +34,9 @@ fit_pwp_rao_context(
 \item{covariates}{Character vector of reduced-model covariates.}
 
 \item{ties}{Cox tied-time method. The optimized engine currently requires
-`"efron"`.}
+\code{"efron"}.}
 
-\item{positive_only}{If `TRUE`, the search fitness is `max(0, signed_z)`;
+\item{positive_only}{If \code{TRUE}, the search fitness is \code{max(0, signed_z)};
 full signed statistics are still returned during detailed evaluation.}
 
 \item{min_covered_patients}{Minimum number of distinct exposed patients for
@@ -45,12 +45,12 @@ a candidate to receive non-zero search fitness.}
 \item{min_covered_events}{Minimum number of exposed endpoint events for a
 candidate to receive non-zero search fitness.}
 
-\item{x}{A `pwp_rao_context` to print.}
+\item{x}{A \code{pwp_rao_context} to print.}
 
 \item{...}{Additional print arguments (currently ignored).}
 }
 \value{
-An object of class `pwp_rao_context`.
+An object of class \code{pwp_rao_context}.
 }
 \description{
 The reduced Cox model is fitted once. Its linear predictor, nuisance design

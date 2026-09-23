@@ -31,8 +31,8 @@ a node column and a target column.}
 \item{node_column}{Either a string (column name) or integer (column index, 1-based)
 specifying the column containing node indexes. This column should be either:
 \itemize{
-  \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
-  \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+\item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))} (0 indexed Note : Might be wise to change this)
+\item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 }}
 
 \item{target_column}{Either a string (column name) or integer (column index, 1-based)
@@ -43,11 +43,11 @@ numeric values with non-0/1 entries are treated as continuous.}
 tree structure. Must start at depth 1 and children must be at depth+1 of
 their parent.}
 
-\item{seed_population}{A \code{list} of integer vectors representing an initial 
-population (vector of 1-based tree index). If provided, these individuals 
-will be included in the first generation . If the list contains fewer 
-individuals than \code{population_size}, the remainder will be initialized 
-randomly. If \code{NULL} (the default), the entire initial population 
+\item{seed_population}{A \code{list} of integer vectors representing an initial
+population (vector of 1-based tree index). If provided, these individuals
+will be included in the first generation . If the list contains fewer
+individuals than \code{population_size}, the remainder will be initialized
+randomly. If \code{NULL} (the default), the entire initial population
 is generated randomly.}
 
 \item{population_size}{Number of solutions in the population. Default: 100.}
@@ -85,12 +85,12 @@ generator. If \code{NULL}, the generator is initialized non-deterministically.}
 }
 \value{
 A list containing:
-  \describe{
-    \item{final_population}{The complete final population of solutions}
-    \item{final_scores}{Scores for all solutions in the final population}
-    \item{parameters}{List of parameters used for the run}
-    \item{statistics}{Additional information about cache hits etc.}
-  }
+\describe{
+\item{final_population}{The complete final population of solutions}
+\item{final_scores}{Scores for all solutions in the final population}
+\item{parameters}{List of parameters used for the run}
+\item{statistics}{Additional information about cache hits etc.}
+}
 }
 \description{
 Performs a genetic algorithm search to find optimal node combinations that
@@ -100,11 +100,11 @@ solutions through selection, crossover, and mutation operations.
 \details{
 The genetic algorithm uses the following operators:
 \itemize{
-  \item \strong{Selection}: Tournament selection with configurable size
-  \item \strong{Crossover}: Single-point crossover on tree subtrees
-  \item \strong{Mutation Type 1}: Add or remove a node (probability controlled by alpha)
-  \item \strong{Mutation Type 2}: Swap a node with its parent or child
-  \item \strong{Elitism}: Top solutions preserved unchanged
+\item \strong{Selection}: Tournament selection with configurable size
+\item \strong{Crossover}: Single-point crossover on tree subtrees
+\item \strong{Mutation Type 1}: Add or remove a node (probability controlled by alpha)
+\item \strong{Mutation Type 2}: Swap a node with its parent or child
+\item \strong{Elitism}: Top solutions preserved unchanged
 }
 
 The algorithm maintains a score cache to avoid redundant computations for

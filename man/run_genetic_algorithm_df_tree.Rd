@@ -39,22 +39,25 @@ specifying the target/outcome column.}
 
 \item{tree}{A data.frame containing the structural definition of the tree.}
 
-\item{depth_column}{Either a string or integer specifying the column in 
+\item{depth_column}{Either a string or integer specifying the column in
 \code{tree} that contains the node depth levels.}
 
-\item{upper_bound_column}{(Optional) Either a string or integer (1-based index) 
-specifying the column in \code{tree_depth} that contains upper 
+\item{upper_bound_column}{(Optional) Either a string or integer (1-based index)
+specifying the column in \code{tree_depth} that contains upper
 bound of nodes. Defaults to \code{NULL}.}
 
-\item{name_column}{(Optional) Either a string or integer (1-based index) 
+\item{name_column}{(Optional) Either a string or integer (1-based index)
 specifying the column in \code{tree} that contains the corresponding name
 of nodes. Defaults to \code{NULL}.}
 
-\item{seed_population}{A \code{list} of integer vectors representing an initial 
-population (vector of 1-based tree index). If provided, these individuals 
-will be included in the first generation . If the list contains fewer 
-individuals than \code{population_size}, the remainder will be initialized 
-randomly. If \code{NULL} (the default), the entire initial population 
+\item{id_column}{Optional observation-unit identifier column, given by name
+or one-based column position; needed for patient-level scoring.}
+
+\item{seed_population}{A \code{list} of integer vectors representing an initial
+population (vector of 1-based tree index). If provided, these individuals
+will be included in the first generation . If the list contains fewer
+individuals than \code{population_size}, the remainder will be initialized
+randomly. If \code{NULL} (the default), the entire initial population
 is generated randomly.}
 
 \item{population_size}{Number of solutions in the population. Default: 100.}
@@ -84,22 +87,22 @@ generator. If \code{NULL}, the generator is initialized non-deterministically.}
 }
 \value{
 A list containing:
-  \describe{
-    \item{final_population}{The complete final population of solutions, 0-based
-    tree index. TODO -> return 1 based (R-like) index for more coherence}
-    \item{final_scores}{Scores for all solutions in the final population}
-    \item{parameters}{List of parameters used for the run}
-    \item{statistics}{Additional information about cache hits, etc.}
-  }
+\describe{
+\item{final_population}{The complete final population of solutions, 0-based
+tree index. TODO -> return 1 based (R-like) index for more coherence}
+\item{final_scores}{Scores for all solutions in the final population}
+\item{parameters}{List of parameters used for the run}
+\item{statistics}{Additional information about cache hits, etc.}
+}
 }
 \description{
 Performs a genetic algorithm search to find optimal node combinations that
-maximize a specified score function. This version builds the internal tree 
+maximize a specified score function. This version builds the internal tree
 structure from a provided data frame mapping node depths and bounds.
 }
 \details{
-Unlike the vector-based version, this function extracts tree hierarchy from 
-the \code{tree_depth} data frame. It uses \code{depth_column} and optionally 
+Unlike the vector-based version, this function extracts tree hierarchy from
+the \code{tree_depth} data frame. It uses \code{depth_column} and optionally
 \code{upper_bound_column} and \code{name_column} to define the tree.
 }
 \examples{

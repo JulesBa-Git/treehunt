@@ -44,14 +44,14 @@ zero-based inclusive subtree upper-bound column.}
 }
 \value{
 A list containing the supplied combinations, their scores, coverage
-  counts, and score-specific summaries.
+counts, and score-specific summaries.
 }
 \description{
 Compute scores for supplied node combinations
 }
 \details{
 Candidate vectors deliberately use ordinary one-based R row
-  positions at this user-facing boundary. They are checked against the tree
-  before being converted once to the zero-based representation used by the
-  C++ scoring engine.
+positions at this user-facing boundary. They are checked against the tree
+before being converted once to the zero-based representation used by the
+C++ scoring engine.
 }

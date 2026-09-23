@@ -1,4 +1,4 @@
-﻿# treehunt
+# treehunt
 
 **treehunt** is an R package that implements evolutionary optimization algorithms to search for optimal node combinations in hierarchical tree structures. Originally developed for pharmacovigilance applications to identify drug (ATC code) combinations associated with adverse events, the package generalizes to any tree hierarchy and optimization metric.
 
@@ -70,6 +70,58 @@ print(mcmc_results$top_scores)
 print(mcmc_results$top_solutions)
 ```
 
+### Uniform reference and weight ESS
+
+The MCMC target favours high scores: `f_T(C)` is proportional to
+`exp(S(C) / temperature)`. Here `S` is capped at `max_score`, as in the
+Metropolis-Hastings acceptance step. The reference below gives equal weight to
+each observed combination of the chosen size; different score values need not
+have equal probabilities.
+
+```r
+reference_run <- run_mcmc(
+  patient_data = patient_df, node_column = "drug_codes",
+  target_column = "adverse_event", tree_depth = tree_depth,
+  epochs = 10000, burn_in = 1000, cocktail_size = 2,
+  temperature = 2, max_score = 200, beta = 4, seed = 4601L,
+  store_trace = TRUE
+)
+
+reference_run$uniform_reference$distribution
+reference_run$uniform_reference$weight_ess
+reference_run$uniform_reference_filtered$weight_ess
+
+# Exact score values instead of histogram bins, using the optional trace:
+reference <- uniform_score_reference(reference_run$trace$score, temperature = 2)
+reference$distribution
+```
+
+At every retained iteration, including repeats after rejection, the inverse
+target weight is proportional to `exp(-S / temperature)`. The engine computes
+these weights before binning, then returns normalized bin probabilities, their
+CDF and inclusive upper tails. The filtered reference conditions on coverage
+strictly greater than `beta` (distinct patients for PWP). An empty filtered
+reference returns `n_samples = 0` and `NA` probabilities and ESS.
+
+`weight_ess = sum(w)^2 / sum(w^2)` measures weight concentration. It does not
+account for MCMC autocorrelation or establish convergence. For large score
+ranges relative to temperature, a longer run or a higher temperature may be
+needed to cover low-score regions. Check mixing separately. With a finite cap,
+the reference describes capped scores; scores beyond the cap are grouped together.
+
+By default `store_trace = FALSE`: weighted histograms and ESS are accumulated
+without storing the full trajectory. `burn_in` is a number of initial iterations
+discarded from distributions, top solutions and trace. Acceptance statistics
+still describe all iterations. Legacy histograms alone cannot be reweighted
+exactly because they do not retain individual scores within each bin.
+
+The MCMC state space contains observed fixed-size subsets of distinct nodes,
+including ancestor-descendant pairs. Node vectors in observations, MCMC outputs
+and traces are **zero-based** tree indices. The support condition and tree must
+match when comparing a sampled reference with
+`mcmc_size_2_true_score_distribution()`; that function enumerates supported pairs
+with unit weights. The GA enforces its own ancestor-descendant validity rule.
+
 ### Using the Genetic Algorithm
 
 ```r
@@ -88,8 +140,13 @@ ga_results <- run_genetic_algorithm(
   verbose = TRUE
 )
 
-# Get summary of top solutions
-top_solutions_summary(ga_results)
+# Inspect the ten highest scores and their zero-based node indices
+top <- head(order(ga_results$final_scores, decreasing = TRUE), 10)
+data.frame(
+  score = ga_results$final_scores[top],
+  nodes = vapply(ga_results$final_population[top], paste,
+                 collapse = ",", FUN.VALUE = character(1))
+)
 ```
 
 The generic GA and MCMC wrappers seed their C++ random-number generators
@@ -147,15 +204,10 @@ tree_depth <- c(1, 2, 3, 3, 2, 2, 3)
 For pharmacovigilance applications with ATC codes:
 
 ```r
-# ATC codes have 5 levels (lengths 1, 3, 4, 5, 7)
-# Map to depths 1-5
-atc_data$depth <- case_when(
-  nchar(atc_data$code) == 1 ~ 1,
-  nchar(atc_data$code) == 3 ~ 2,
-  nchar(atc_data$code) == 4 ~ 3,
-  nchar(atc_data$code) == 5 ~ 4,
-  nchar(atc_data$code) == 7 ~ 5
-)
+# ATC codes have five levels (code lengths 1, 3, 4, 5, 7).
+# Example path, already in depth-first order:
+atc_data <- data.frame(code = c("A", "A01", "A01A", "A01AA", "A01AA01"))
+atc_data$depth <- match(nchar(atc_data$code), c(1L, 3L, 4L, 5L, 7L))
 ```
 
 ## PWP Cox Rao searches
@@ -239,3 +291,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 3. Commit your changes (`git commit -m 'Add feature_name: details'`)
 4. Push to the branch (`git push origin feature/feature_name`)
 5. Open a Pull Request
+
+## License
+
+GPL-3. See the repository LICENSE file.

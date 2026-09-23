@@ -53,7 +53,7 @@ template <typename TargetType>
 PatientData<TargetType>::PatientData(const Rcpp::DataFrame& df, SEXP node_column, 
                                      SEXP target_column, const tree_structure& tree,
                                      SEXP id_column):
-  n_patients_{0}, patients_id_{}, tree_{tree} {
+  patients_id_{}, n_patients_{0}, tree_{tree} {
   
   if(df.nrows() == 0)
     Rcpp::stop("DataFrame is empty");

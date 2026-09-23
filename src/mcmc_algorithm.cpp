@@ -1,4 +1,6 @@
 #include "mcmc_algorithm.h"
+#include <set>
+#include <climits>
 
 template<typename TargetType>
 MCMCAlgorithm<TargetType>::MCMCAlgorithm(const PatientData<TargetType>& data,
@@ -7,9 +9,25 @@ MCMCAlgorithm<TargetType>::MCMCAlgorithm(const PatientData<TargetType>& data,
   : data_{data}, pwp_context_{pwp_context}, params_{params},
     min_score_(0.0), min_score_filtered_(0.0) {
   
-  size_t n_bins = static_cast<size_t>(params_.max_score * 10) + 1;
+  if (params_.epochs == 0 || params_.epochs > INT_MAX)
+    Rcpp::stop("epochs must be a positive integer no greater than .Machine$integer.max.");
+  if (!std::isfinite(params_.temperature) || params_.temperature <= 0)
+    Rcpp::stop("temperature must be finite and positive.");
+  if (!std::isfinite(params_.prob_mutation_type1) ||
+      params_.prob_mutation_type1 <= 0 || params_.prob_mutation_type1 > 1)
+    Rcpp::stop("prob_type1 must be finite and in (0, 1] to connect the state space.");
+  if (!std::isfinite(params_.max_score) || params_.max_score <= 0 ||
+      params_.max_score > (INT_MAX - 1) / 10.0)
+    Rcpp::stop("max_score must be finite, positive, and small enough for histogram indexing.");
+  if (params_.cocktail_size == 0 || params_.cocktail_size > data_.get_tree().size())
+    Rcpp::stop("cocktail_size must lie between 1 and the number of tree nodes.");
+  if (params_.burn_in >= params_.epochs)
+    Rcpp::stop("burn_in must be smaller than epochs.");
+  size_t n_bins = static_cast<size_t>(std::ceil(params_.max_score * 10)) + 1;
   results_.score_distribution.resize(n_bins, 0);
   results_.score_distribution_filtered.resize(n_bins, 0);
+  results_.uniform_reference.resize(n_bins);
+  results_.uniform_reference_filtered.resize(n_bins);
   results_.cocktail_size = params_.cocktail_size;
   if (params.seed >= 0) {
     rng_ = std::mt19937(static_cast<unsigned int>(params.seed));
@@ -39,15 +57,61 @@ bool MCMCAlgorithm<TargetType>::is_in_population(const Solution& sol) const {
 
 template<typename TargetType>
 Solution MCMCAlgorithm<TargetType>::propose_type1_mutation() {
-  // Type 1: Generate completely new random solution
-  return Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size, 
-                                       100, true);
+  // Floyd sampling: every subset of k distinct nodes has the same probability.
+  const size_t n = data_.get_tree().size();
+  std::set<int> selected;
+  for (size_t j = n - params_.cocktail_size; j < n; ++j) {
+    const int candidate = std::uniform_int_distribution<int>(0, j)(rng_);
+    if (!selected.insert(candidate).second) selected.insert(static_cast<int>(j));
+  }
+  return Solution(std::vector<int>(selected.begin(), selected.end()));
 }
 
 template<typename TargetType>
-Solution MCMCAlgorithm<TargetType>::propose_type2_mutation(const Solution& current) {
-  // Type 2: Swap one node with its parent or child
-  return current.mutate_swap_type2(data_.get_tree(), rng_);
+Solution MCMCAlgorithm<TargetType>::initial_solution() {
+  // Build a supported state directly, avoiding unbounded rejection at startup.
+  const auto& depth = data_.get_tree().get_depth();
+  std::vector<int> parent(depth.size()), ancestors(data_.get_tree().max_depth() + 1, -1);
+  for (size_t node = 0; node < depth.size(); ++node) {
+    parent[node] = ancestors[depth[node] - 1];
+    ancestors[depth[node]] = static_cast<int>(node);
+  }
+  for (size_t row = 0; row < data_.size(); ++row) {
+    if (row % 1024 == 0) Rcpp::checkUserInterrupt();
+    std::set<int> supported;
+    for (int node : data_.get_patient_nodes(row)) {
+      if (node < 0 || static_cast<size_t>(node) >= depth.size())
+        Rcpp::stop("Observation nodes must be zero-based indices within the tree.");
+      for (int ancestor = node; ancestor >= 0; ancestor = parent[ancestor])
+        supported.insert(ancestor);
+    }
+    if (supported.size() >= params_.cocktail_size) {
+      std::vector<int> nodes(supported.begin(), supported.end());
+      std::shuffle(nodes.begin(), nodes.end(), rng_);
+      nodes.resize(params_.cocktail_size);
+      return Solution(nodes);
+    }
+  }
+  Rcpp::stop("No observed combination has the requested cocktail_size.");
+}
+
+template<typename TargetType>
+std::vector<std::pair<int, int>> MCMCAlgorithm<TargetType>::local_moves(
+    const Solution& current) const {
+  auto moves = current.determine_vertex(data_.get_tree());
+  const auto& nodes = current.get_nodes();
+  moves.erase(std::remove_if(moves.begin(), moves.end(), [&](const auto& move) {
+    return std::binary_search(nodes.begin(), nodes.end(), move.second);
+  }), moves.end());
+  return moves;
+}
+
+template<typename TargetType>
+double MCMCAlgorithm<TargetType>::capped_score(double score) const {
+  // Positive infinity is supported by the existing finite score cap.
+  if (std::isnan(score) || score < 0)
+    Rcpp::stop("MCMC requires non-negative scores; use positive_only = TRUE for PWP.");
+  return std::min(score, params_.max_score);
 }
 
 template<typename TargetType>
@@ -109,22 +173,18 @@ MCMCAlgorithm<TargetType>::compute_score(const Solution& sol) const{
 }
 
 template<typename TargetType>
-void MCMCAlgorithm<TargetType>::update_score_distribution(double score, 
-                                                          size_t covered_patients) {
-  if (score < params_.max_score) {
-    size_t bin_index = static_cast<size_t>(score * 10.0);
-    ++results_.score_distribution[bin_index];
-    
-    if (covered_patients > params_.beta) {
-      ++results_.score_distribution_filtered[bin_index];
-    }
-  } else {
-    results_.outstanding_scores.push_back(score);
-    ++results_.score_distribution.back(); 
-    
-    if (covered_patients > params_.beta) {
-      ++results_.score_distribution_filtered.back();
-    }
+void MCMCAlgorithm<TargetType>::update_score_distribution(
+    double score, size_t covered_patients, bool exhaustive) {
+  const size_t bin = score < params_.max_score ?
+    static_cast<size_t>(score * 10.0) : results_.score_distribution.size() - 1;
+  ++results_.score_distribution[bin];
+  if (score >= params_.max_score) results_.outstanding_scores.push_back(score);
+  // Exhaustive enumeration already follows the uniform reference.
+  results_.uniform_reference.add(bin, exhaustive ? 0.0 : score, params_.temperature);
+  if (covered_patients > params_.beta) {
+    ++results_.score_distribution_filtered[bin];
+    results_.uniform_reference_filtered.add(bin, exhaustive ? 0.0 : score,
+                                             params_.temperature);
   }
 }
 
@@ -133,6 +193,7 @@ void MCMCAlgorithm<TargetType>::update_top_solutions(const Solution& sol,
                                                      double score, 
                                                      int covered_patients) {
   
+  if (params_.n_results == 0) return;
   // Update regular top solutions
   if (top_heap_.size() < params_.n_results) {
     top_heap_.push(std::make_pair(score, sol.get_nodes()));
@@ -200,21 +261,16 @@ void MCMCAlgorithm<TargetType>::finalize_results() {
 
 template<typename TargetType>
 MCMCResults MCMCAlgorithm<TargetType>::run() {
-  Solution current = Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size,
-                                                   1000, true);
-  
-  while (!is_in_population(current)) {
-    current = Solution::create_random_valid(data_.get_tree(), rng_, params_.cocktail_size,
-                                            1000, true);
-  }
-  
+  Solution current = initial_solution();
+
   auto current_score_data = compute_score(current);
-  double current_score = std::min(current_score_data.score, params_.max_score);
+  double current_score = capped_score(current_score_data.score);
   
   std::uniform_real_distribution<double> uniform(0.0, 1.0);
   
   
   for (size_t epoch = 0; epoch < params_.epochs; ++epoch) {
+    if (epoch % 1024 == 0) Rcpp::checkUserInterrupt();
     bool is_type1 = uniform(rng_) < params_.prob_mutation_type1;
     
     if (is_type1) {
@@ -228,7 +284,7 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
         ++results_.type1_in_population;
         
         auto proposed_score_data = compute_score(proposed);
-        double proposed_score = std::min(proposed_score_data.score, params_.max_score);
+        double proposed_score = capped_score(proposed_score_data.score);
         
         double acceptance_prob = compute_acceptance_probability_type1(current_score, 
                                                                       proposed_score);
@@ -246,13 +302,17 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
       
     } else {
       // Type 2 mutation
-      auto current_vertices = current.determine_vertex(data_.get_tree());
+      auto current_vertices = local_moves(current);
       
       if (current_vertices.empty()) {
         ++results_.type2_moves;
         ++results_.rejected_moves;
       } else {
-        Solution proposed = propose_type2_mutation(current);
+        const auto move = current_vertices[std::uniform_int_distribution<size_t>(
+          0, current_vertices.size() - 1)(rng_)];
+        auto nodes = current.get_nodes();
+        *std::find(nodes.begin(), nodes.end(), move.first) = move.second;
+        Solution proposed(nodes);
         ++results_.type2_moves;
         
         if (!is_in_population(proposed)) {
@@ -262,9 +322,9 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
           ++results_.type2_in_population;
           
           auto proposed_score_data = compute_score(proposed);
-          double proposed_score = std::min(proposed_score_data.score, params_.max_score);
+          double proposed_score = capped_score(proposed_score_data.score);
           
-          auto proposed_vertices = proposed.determine_vertex(data_.get_tree());
+          auto proposed_vertices = local_moves(proposed);
           
           double acceptance_prob = compute_acceptance_probability_type2(
             current_score, proposed_score,
@@ -283,9 +343,15 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
       }
     }
     
-    // Update distributions and top solutions with current state
-    update_score_distribution(current_score, current_score_data.covered_patients);
-    update_top_solutions(current, current_score, current_score_data.covered_patients);
+    if (epoch >= params_.burn_in) {
+      update_score_distribution(current_score, current_score_data.covered_patients);
+      update_top_solutions(current, current_score, current_score_data.covered_patients);
+      if (params_.store_trace) {
+        results_.trace_scores.push_back(current_score);
+        results_.trace_support.push_back(current_score_data.covered_patients);
+        results_.trace_solutions.push_back(current.get_nodes());
+      }
+    }
   }
   
   results_.total_iterations = params_.epochs;
@@ -321,15 +387,16 @@ MCMCResults MCMCAlgorithm<TargetType>::run() {
 template<typename TargetType>
 MCMCResults MCMCAlgorithm<TargetType>::true_size2_distribution() {
   
-  const auto& tree = data_.get_tree();
-  size_t tree_size = tree.size();
-  
-  for(int i = 0; i < tree_size-1; ++i){
-    for(int j = i; j < tree_size; ++j ){
-      Solution explorer({i,j});
-      
-      auto results_score = compute_score(explorer);
-      update_score_distribution(results_score.score, results_score.covered_patients);
+  const size_t tree_size = data_.get_tree().size();
+  results_.exhaustive = true;
+  for (size_t i = 0; i + 1 < tree_size; ++i) {
+    Rcpp::checkUserInterrupt();
+    for (size_t j = i + 1; j < tree_size; ++j) {
+      Solution explorer({static_cast<int>(i), static_cast<int>(j)});
+      if (!is_in_population(explorer)) continue;
+      const auto scored = compute_score(explorer);
+      update_score_distribution(capped_score(scored.score), scored.covered_patients, true);
+      ++results_.total_iterations;
     }
   }
   finalize_results();

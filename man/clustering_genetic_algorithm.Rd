@@ -21,26 +21,26 @@ clustering_genetic_algorithm(
 }
 \arguments{
 \item{cocktails}{A list of 1-based integer vectors or a data frame containing
-them. For a data frame, `vec_cocktails` is the preferred list-column name;
+them. For a data frame, \code{vec_cocktails} is the preferred list-column name;
 otherwise exactly one list-column must be present.}
 
 \item{patient_data}{The dataset used for scoring.}
 
-\item{node_column}{Column in `patient_data` containing zero-based node indices.}
+\item{node_column}{Column in \code{patient_data} containing zero-based node indices.}
 
-\item{target_column}{Column containing the outcome (for example, `"QT_c"`).}
+\item{target_column}{Column containing the outcome (for example, \code{"QT_c"}).}
 
 \item{tree_df}{The tree structure data frame.}
 
-\item{depth_column}{Column in `tree_df` containing node depths.}
+\item{depth_column}{Column in \code{tree_df} containing node depths.}
 
-\item{upper_bound_column}{Column in `tree_df` containing zero-based subtree bounds.}
+\item{upper_bound_column}{Column in \code{tree_df} containing zero-based subtree bounds.}
 
-\item{name_column}{Optional node-label column in `tree_df`.}
+\item{name_column}{Optional node-label column in \code{tree_df}.}
 
 \item{score_type}{The scoring method (e.g., "Wilcoxon", "RR", "phyper").}
 
-\item{umap_config}{Optional configuration list for UMAP. Defaults to `umap.defaults`.}
+\item{umap_config}{Optional configuration list for UMAP. Defaults to \code{umap.defaults}.}
 
 \item{eps_dbscan}{Distance parameter for DBSCAN. Default is 0.2.}
 

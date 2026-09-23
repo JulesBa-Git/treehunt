@@ -63,3 +63,29 @@ test_that("continuous compute_score calls require an identifier", {
     "id_column is required"
   )
 })
+
+
+test_that("hypergeometric scores agree with Fisher tails including zero events", {
+  fixture <- make_compute_score_fixture()
+  result <- compute_score(list(1L, 2L, 3L), fixture$observations,
+                          "nodes", "outcome", fixture$tree, "Depth",
+                          score_type = "hypergeometric")
+  expect_equal(result$scores, c(0, log(2), 0))
+  expect_true(all(is.finite(result$scores)))
+})
+
+test_that("patient-level scores use medians and are invariant to row order", {
+  medians <- c(11:14, -1:-4)
+  dat <- data.frame(id = rep(1:8, each = 3),
+                    outcome = unlist(lapply(medians, function(m) c(1000, -1000, m))))
+  dat$nodes <- c(rep(list(0L), 12), rep(list(1L), 12))
+  tree <- data.frame(Depth = c(1L, 1L))
+  score <- function(data, type) compute_score(list(1L), data, "nodes", "outcome", tree,
+                                              "Depth", id_column = "id", score_type = type)
+  result <- score(dat, "wilcoxon")
+  expect_equal(sort(result$QT_diff_distribution[[1]]), as.numeric(11:14))
+  reordered <- dat[c(seq(3, 24, 3), seq(1, 24, 3), seq(2, 24, 3)), ]
+  for (type in c("wilcoxon", "residuals")) {
+    expect_equal(score(dat, type)$scores, score(reordered, type)$scores, tolerance = 1e-12)
+  }
+})

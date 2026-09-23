@@ -12,14 +12,17 @@ run_mcmc(
   tree_depth,
   epochs,
   temperature = 1,
-  n_results = 10L,
-  cocktail_size = 2L,
+  n_results = 10,
+  cocktail_size = 2,
   prob_type1 = 0.01,
-  beta = 4L,
+  beta = 4,
   max_score = 200,
   score_type = "hypergeometric",
   verbose = FALSE,
-  seed = NULL
+  seed = NULL,
+  burn_in = 0,
+  store_trace = FALSE,
+  id_column = NULL
 )
 }
 \arguments{
@@ -29,8 +32,8 @@ a node column and a target column.}
 \item{node_column}{Either a string (column name) or integer (column index, 1-based)
 specifying the column containing drug codes. This column should be either:
 \itemize{
-  \item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
-  \item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
+\item A list of integer vectors: \code{list(c(1,2), c(3), c(4,5))}
+\item A character vector with comma-separated values: \code{c("1,2", "3", "4,5")}
 }}
 
 \item{target_column}{Either a string (column name) or integer (column index, 1-based)
@@ -53,11 +56,11 @@ probability. Higher values lead to an easiest acceptance of lower score. Default
 \item{prob_type1}{Probability of using Type 1 mutation (random generation) vs
 Type 2 mutation (local swap). Default: 0.01.}
 
-\item{beta}{Minimum number of patients that must be covered for a solution to
-be included in the filtered results. Default: 4.}
+\item{beta}{Strict support threshold: filtered results require more than
+beta covered observations (or distinct patients for patient-level scores). Default: 4.}
 
-\item{max_score}{Maximum score value for binning in the score distribution.
-Scores above this are tracked separately. Default: 200.0.}
+\item{max_score}{Finite positive cap applied to scores before Metropolis-Hastings
+acceptance, importance weighting and binning. Default: 200.0.}
 
 \item{score_type}{Scoring function to use. Either "hypergeometric" for the
 hypergeometric test, "relative_risk" for relative risk calculation, or "wilcoxon"
@@ -69,73 +72,76 @@ Default: FALSE.}
 
 \item{seed}{Optional non-negative integer seed for the C++ random-number
 generator. If \code{NULL}, the generator is initialized non-deterministically.}
+
+\item{burn_in}{Number of initial iterations excluded from all distributions,
+top solutions and the optional trace. Must be smaller than epochs. Default: 0.}
+
+\item{store_trace}{If TRUE, return the retained capped score, support and
+zero-based node vector for each iteration. Default FALSE avoids this storage.}
+
+\item{id_column}{Optional observation-unit identifier column, given by name
+or one-based position. Required for Wilcoxon and residual patient-level scores.}
 }
 \value{
 A list containing:
-  \describe{
-    \item{top_solutions}{List of node vectors for the top scoring solutions}
-    \item{top_scores}{Numeric vector of scores for the top solutions}
-    \item{top_solutions_filtered}{Top solutions meeting the beta threshold}
-    \item{top_scores_filtered}{Scores for the filtered solutions}
-    \item{score_distribution}{Histogram of scores (0.1-wide bins)}
-    \item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
-    \item{outstanding_scores}{Scores that exceeded max_score}
-    \item{statistics}{List of run statistics including acceptance rates}
-  }
+\describe{
+\item{top_solutions}{List of zero-based node vectors for the top scoring solutions}
+\item{top_scores}{Numeric vector of scores for the top solutions}
+\item{top_solutions_filtered}{Top solutions meeting the beta threshold}
+\item{top_scores_filtered}{Scores for the filtered solutions}
+\item{score_distribution}{Histogram of retained capped scores (0.1-wide bins and a cap bin)}
+\item{score_distribution_filtered}{Histogram for solutions meeting beta threshold}
+\item{outstanding_scores}{Retained capped scores equal to max_score}
+\item{uniform_reference}{Uniform-reference distribution and weight ESS}
+\item{uniform_reference_filtered}{Support-filtered uniform reference and ESS}
+\item{reference_parameters}{Temperature, score cap, support and burn-in settings}
+\item{trace}{Retained trajectory, only when store_trace is TRUE}
+\item{statistics}{List of run statistics including acceptance rates}
+}
 }
 \description{
 Performs a Modified Metropolis-Hastings MCMC sampling to estimate the score
 distribution of nodes combination of a given \emph{cocktail_size}. The
-algorithm explores the space of tree combinations using a proposal law 
+algorithm explores the space of tree combinations using a proposal law
 composed of two mutation types.
 }
 \details{
-The MCMC algorithm uses a Modified Metropolis-Hastings approach with two
-proposal types:
-\itemize{
-  \item \strong{Type 1}: Generates a completely new random valid solution
-  \item \strong{Type 2}: Swaps one node with its parent or child in the tree
-}
+The stationary target on observed subsets of \code{cocktail_size} distinct
+nodes is proportional to \eqn{\exp(S(C)/T)}, where \eqn{S} is capped at
+\code{max_score}. Ancestor-descendant pairs are included in this MCMC space;
+genetic-algorithm validity filtering is a separate operation.
 
-The acceptance probability for Type 1 proposal is:
-\deqn{\alpha = \exp((S_{proposed} - S_{current}) / T)}
+Type 1 proposes a uniform subset of distinct nodes. Type 2 replaces a node
+by a parent or child not already in the combination. Its Hastings correction
+is \eqn{|V(C)|/|V(C')|}, counting these possible local moves before rejecting
+proposals absent from the data. Each acceptance probability is the minimum
+of 1 and \eqn{\exp((S(C')-S(C))/T)} times the applicable proposal correction.
+A positive \code{prob_type1} connects the observed state space.
 
-For Type 2 proposals, a proposal ratio correction is applied since the ratio
-of P(current | proposed) != P(proposed | current):
-\deqn{\alpha = \exp((S_{proposed} - S_{current}) / T) \times \frac{|V_{current}|}{|V_{proposed}|}}
+At every retained iteration, including rejected moves, weights proportional
+to \eqn{\exp(-S(C)/T)} recover the uniform combination reference. Weights are
+computed from exact capped scores before grouping into bins. They are
+rescaled internally to avoid numerical underflow. The filtered reference
+conditions on support strictly greater than \code{beta}, with its own ESS.
+This estimates a uniform law on combinations, not on distinct score values.
 
-where \eqn{|V|} is the number of possible swap vertices for a solution.
-
-Solutions are only accepted if they appear in at least one patient's data
-("modified" constraint).
+\code{uniform_reference} and \code{uniform_reference_filtered} each contain
+\code{distribution}, \code{n_samples}, and \code{weight_ess}. The distribution
+columns are \code{lower}, \code{upper}, \code{probability}, \code{cdf} and
+\code{upper_tail}. Bins are [lower, upper), except the final singleton bin
+at the cap. CDF includes the current bin; upper_tail includes it and all
+subsequent bins. Empty references have NA probabilities and ESS.
+ESS is \eqn{(\sum w)^2/\sum w^2}; it measures weight concentration and does
+not account for MCMC autocorrelation. Check mixing separately and choose
+an appropriate \code{burn_in}. See \code{\link{uniform_score_reference}}
+for post-processing an optionally stored trace without binning.
 }
 \examples{
-\dontrun{
-# Create example data
-patient_df <- data.frame(
-  patient_id = 1:100,
-  outcome = rbinom(100, 1, 0.3)
-)
-patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
-
-# Define tree structure (simple 3-level tree)
-tree_depth <- c(1, rep(2, 5), rep(3, 15))
-
-# Run MCMC
-results <- run_mcmc(
-  patient_data = patient_df,
-  node_column = "drugs",
-  target_column = "outcome",
-  tree_depth = tree_depth,
-  epochs = 5000,
-  cocktail_size = 2,
-  score_type = "hypergeometric",
-  verbose = TRUE
-)
-
-# View top results
-print(results$top_scores)
-print(results$top_solutions)
-}
+dat <- data.frame(outcome = c(1L, 1L, 0L, 0L))
+dat$nodes <- list(c(0L, 1L), 0L, 1L, 1L)
+tree <- data.frame(Depth = c(1L, 1L))
+result <- run_mcmc(dat, "nodes", "outcome", c(1L, 1L),
+  epochs = 100, cocktail_size = 1, seed = 42)
+result$uniform_reference$weight_ess
 
 }

@@ -16,6 +16,31 @@ get_dissimilarity_of_list(
   score_type = "wilcoxon"
 )
 }
+\arguments{
+\item{cocktail_list}{List of integer vectors identifying tree rows with
+one-based R indices. The returned \code{solutions} retain these indices.}
+
+\item{patient_data}{Observation data frame. Its node list-column uses the
+package's zero-based internal tree indices.}
+
+\item{node_column}{Name or one-based position of the node list-column.}
+
+\item{target_column}{Name or one-based position of the outcome column.}
+
+\item{tree}{Tree data frame in depth-first order.}
+
+\item{depth_column}{Name or one-based position of the tree-depth column.}
+
+\item{upper_bound_column}{Optional name or one-based position of the
+zero-based inclusive subtree upper-bound column.}
+
+\item{name_column}{Optional name or one-based position of the node-label column.}
+
+\item{score_type}{Registered score implementation to evaluate.}
+}
+\value{
+A symmetric numeric matrix of normalized greedy tree-edit dissimilarities.
+}
 \description{
 Compute the dissimilarity matrix on a list of cocktails
 }

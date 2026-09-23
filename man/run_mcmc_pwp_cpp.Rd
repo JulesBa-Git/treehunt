@@ -14,15 +14,17 @@ run_mcmc_pwp_cpp(
   upper_bound_column,
   name_column,
   score_context,
-  epochs = 100000L,
+  epochs = 1e+05,
   temperature = 1,
-  n_results = 20L,
-  cocktail_size = 2L,
+  n_results = 20,
+  cocktail_size = 2,
   prob_type1 = 0.01,
-  beta = 20L,
+  beta = 20,
   max_score = 50,
   seed = 1L,
-  verbose = FALSE
+  verbose = FALSE,
+  burn_in = 0,
+  store_trace = FALSE
 )
 }
 \description{

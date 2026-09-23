@@ -324,7 +324,7 @@ GeneticAlgorithm<TargetType>::dissimilarity_input_computation() const {
       }
       int current_father = father[node];
       // add the father of this node
-      while (depth[current_father] >= 1) {
+      while (current_father >= 0) {
         M[row].push_back(current_father);
         current_father = father[current_father];
       } // push the father of depth 1
@@ -343,6 +343,7 @@ GeneticAlgorithm<TargetType>::population_dissimilarity() const {
   auto [M, index] = dissimilarity_input_computation();
   size_t n = population_.size();
   Rcpp::NumericMatrix dissimilarity(n, n);
+  if (n == 0) return dissimilarity;
   dissimilarity.fill(-1.0);
 
   for (size_t i = 0; i < n - 1; ++i) {

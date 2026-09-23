@@ -2,8 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{get_taker}
 \alias{get_taker}
-\title{Temporary helpers : Used to get the takers of a cocktail or cocktail list in
-order to get a sense of the used medications as the ndc are mapped to ATC4}
+\title{Identify observations covered by hierarchical combinations}
 \usage{
 get_taker(
   cocktail_list,
@@ -18,7 +17,34 @@ get_taker(
   name_column = NULL
 )
 }
+\arguments{
+\item{cocktail_list}{List of zero-based node-index vectors.}
+
+\item{patient_data}{Observation data frame. Its node list-column uses the
+package's zero-based internal tree indices.}
+
+\item{node_column}{Name or one-based position of the node list-column.}
+
+\item{target_column}{Name or one-based position of the outcome column.}
+
+\item{id_column}{Name of the integer patient identifier column.}
+
+\item{hadm_column}{Name of the integer admission identifier column.}
+
+\item{tree}{Tree data frame in depth-first order.}
+
+\item{depth_column}{Name or one-based position of the tree-depth column.}
+
+\item{upper_bound_column}{Optional name or one-based position of the
+zero-based inclusive subtree upper-bound column.}
+
+\item{name_column}{Optional name or one-based position of the node-label column.}
+}
+\value{
+A list with the supplied combinations (\code{cocktail_list}), distinct
+patient identifiers (\code{Takers_set}), admission identifiers (\code{hadm_set}),
+and one-based observation rows (\code{idx_set}) for each combination.
+}
 \description{
-Temporary helpers : Used to get the takers of a cocktail or cocktail list in
-order to get a sense of the used medications as the ndc are mapped to ATC4
+Identify observations covered by hierarchical combinations
 }

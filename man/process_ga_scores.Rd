@@ -25,13 +25,13 @@ process_ga_scores(
 
 \item{tree_df}{The tree structure data frame.}
 
-\item{node_column}{Column in `patient_data` containing zero-based node indices.}
+\item{node_column}{Column in \code{patient_data} containing zero-based node indices.}
 
-\item{target_column}{Column containing the outcome (for example, `"QT_c"`).}
+\item{target_column}{Column containing the outcome (for example, \code{"QT_c"}).}
 
-\item{depth_column}{Column in `tree_df` containing node depths.}
+\item{depth_column}{Column in \code{tree_df} containing node depths.}
 
-\item{upper_bound_column}{Column in `tree_df` containing zero-based subtree bounds.}
+\item{upper_bound_column}{Column in \code{tree_df} containing zero-based subtree bounds.}
 
 \item{score_type}{The scoring method (e.g., "Wilcoxon", "RR", "phyper").}
 
@@ -40,7 +40,7 @@ process_ga_scores(
 \item{id_column}{Optional observation-unit identifier required by patient-level
 continuous-outcome scores.}
 
-\item{name_column}{Optional node-label column in `tree_df`.}
+\item{name_column}{Optional node-label column in \code{tree_df}.}
 }
 \description{
 Process and Attach GA Scores and Statistics (Generic)

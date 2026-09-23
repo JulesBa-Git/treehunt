@@ -27,9 +27,9 @@ run_pwp_genetic_algorithm(
 )
 }
 \arguments{
-\item{data}{Original interval-level data used to fit `context`.}
+\item{data}{Original interval-level data used to fit \code{context}.}
 
-\item{context}{A `pwp_rao_context`.}
+\item{context}{A \code{pwp_rao_context}.}
 
 \item{tree}{Tree data frame.}
 

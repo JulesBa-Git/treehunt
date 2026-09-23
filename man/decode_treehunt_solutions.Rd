@@ -16,7 +16,7 @@ decode_treehunt_solutions(
 
 \item{tree}{Tree data frame.}
 
-\item{index_base}{Index base of `combinations`.}
+\item{index_base}{Index base of \code{combinations}.}
 
 \item{code_column}{Column containing node labels.}
 }

@@ -81,7 +81,7 @@ public:
 
     size_t n = data.size();
 
-    bool use_parallel =
+    [[maybe_unused]] const bool use_parallel =
         parallel && n > 1000; // Only parallelize for large datasets
 
 #ifdef _OPENMP
@@ -143,7 +143,7 @@ public:
     size_t zero_target = n - nonzero_target;
 
     auto log_phyper =
-        R::phyper(result.covered_nonzero_target - 1, nonzero_target,
+        R::phyper(static_cast<double>(result.covered_nonzero_target) - 1.0, nonzero_target,
                   zero_target, result.covered_patients, false, true);
 
     result.score = -log_phyper;
@@ -242,7 +242,7 @@ public:
     // vector of pair <value, group>
     std::vector<std::pair<double, int>> regrouped_vec(data.size());
 
-    bool use_parallel = parallel && data.size() > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && data.size() > 1000;
     double tmp_covered = 0;
 
 #ifdef _OPENMP
@@ -383,7 +383,8 @@ public:
     result.covered_nonzero_target = 0;
     double noncovered = 0;
     std::vector<double> diff_QT_values;
-    auto get_median = [](const std::vector<double> &v) {
+    auto get_median = [](std::vector<double> v) {
+      std::sort(v.begin(), v.end());
       size_t mid = v.size() / 2;
       return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
     };
@@ -393,7 +394,7 @@ public:
     // vector of pair <value, group>
     std::vector<std::pair<double, int>> regrouped_vec(data.size());
 
-    bool use_parallel = parallel && data.size() > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && data.size() > 1000;
     double tmp_covered = 0;
 
 #ifdef _OPENMP
@@ -541,7 +542,7 @@ public:
     size_t n_total = data.size();
     std::vector<std::pair<double, int>> combined_vec(n_total);
 
-    bool use_parallel = parallel && n_total > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && n_total > 1000;
     double tmp_covered = 0;
 
 #ifdef _OPENMP
@@ -681,7 +682,7 @@ public:
     size_t n_total = data.size();
     std::vector<std::pair<double, int>> combined_vec(n_total);
 
-    bool use_parallel = parallel && n_total > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && n_total > 1000;
     double tmp_covered = 0;
 
 #ifdef _OPENMP
@@ -832,9 +833,10 @@ public:
     size_t n_total = data.size();
     std::vector<std::pair<double, int>> combined_vec(n_total);
 
-    bool use_parallel = parallel && n_total > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && n_total > 1000;
 
-    auto get_median = [](const std::vector<double> &v) {
+    auto get_median = [](std::vector<double> v) {
+      std::sort(v.begin(), v.end());
       size_t mid = v.size() / 2;
       return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
     };
@@ -950,9 +952,10 @@ public:
     size_t n_total = data.size();
     std::vector<std::pair<double, int>> combined_vec(n_total);
 
-    bool use_parallel = parallel && n_total > 1000;
+    [[maybe_unused]] const bool use_parallel = parallel && n_total > 1000;
 
-    auto get_median = [](const std::vector<double> &v) {
+    auto get_median = [](std::vector<double> v) {
+      std::sort(v.begin(), v.end());
       size_t mid = v.size() / 2;
       return (v.size() % 2 == 0) ? (v[mid - 1] + v[mid]) / 2.0 : v[mid];
     };

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 #include "solution.h"
+#include "uniform_reference.h"
 #include "patient_data.h"
 #include "pwp_score.h"
 #include "score_functions.h"
@@ -24,11 +25,13 @@ struct MCMCParams {
   ScoreType score_type_;
   bool verbose;
   int seed;
+  size_t burn_in;
+  bool store_trace;
   
   MCMCParams() : epochs(10000), temperature(1.0), n_results(10), 
   cocktail_size(3), prob_mutation_type1(0.5), 
   beta(5), max_score(100.0), score_type_(ScoreType::HYPERGEOMETRIC),
-  verbose(false), seed(-1) {}
+  verbose(false), seed(-1), burn_in(0), store_trace(false) {}
 };
 
 // Results structure
@@ -38,6 +41,12 @@ struct MCMCResults {
   std::vector<size_t> score_distribution_filtered;
   std::vector<double> outstanding_scores;  // Scores > max_score
   
+  UniformReference uniform_reference, uniform_reference_filtered;
+  std::vector<double> trace_scores;
+  std::vector<size_t> trace_support;
+  std::vector<std::vector<int>> trace_solutions;
+  bool exhaustive = false;
+
   // Top solutions
   std::vector<std::vector<int>> top_solutions;
   std::vector<double> top_scores;
@@ -101,12 +110,14 @@ private:
   
   bool is_in_population(const Solution& sol) const;
   Solution propose_type1_mutation();
-  Solution propose_type2_mutation(const Solution& current);
+  Solution initial_solution();
+  std::vector<std::pair<int, int>> local_moves(const Solution& current) const;
+  double capped_score(double score) const;
   double compute_acceptance_probability_type1(double current_score, double proposed_score);
   double compute_acceptance_probability_type2(double current_score, double proposed_score,
                                              size_t n_vertex_current, size_t n_vertex_proposed);
   typename ScoreFunctions<TargetType>::ScoreData compute_score(const Solution& sol) const;
-  void update_score_distribution(double score, size_t covered_patients);
+  void update_score_distribution(double score, size_t covered_patients, bool exhaustive = false);
   void update_top_solutions(const Solution& sol, double score, int covered_patients);
   void finalize_results();
   

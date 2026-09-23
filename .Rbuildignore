@@ -1,0 +1,14 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git$
+^\.gitignore$
+^\.DS_Store$
+^\.RData$
+^\.Rhistory$
+^src/\.DS_Store$
+^study_configs\.json$
+^tmp\.R$
+^\.github$
+^cran-comments\.md$
+^TREEHUNT_CRAN_CHANGELOG_20260923\.md$
+^LICENSE$
