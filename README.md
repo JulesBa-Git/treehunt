@@ -1,5 +1,9 @@
 # treehunt
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/JulesBa-Git/treehunt/actions/workflows/R-CMD-check.yaml/badge.svg?branch=main)](https://github.com/JulesBa-Git/treehunt/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 **treehunt** is an R package that implements evolutionary optimization algorithms to search for optimal node combinations in hierarchical tree structures. Originally developed for pharmacovigilance applications to identify drug (ATC code) combinations associated with adverse events, the package generalizes to any tree hierarchy and optimization metric.
 
 ## 🎯 Overview
