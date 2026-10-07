@@ -1,7 +1,7 @@
 Package: treehunt
 Type: Package
 Title: Evolutionary Search for Optimal Node Combinations in Trees
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: person("Jules", "Bangard", role = c("aut", "cre"), email = "jules.bangard@etu.unistra.fr")
 Author: Jules Bangard [aut, cre]
 Maintainer: Jules Bangard <jules.bangard@etu.unistra.fr>
@@ -16,10 +16,10 @@ License: GPL-3
 Imports: Rcpp (>= 1.1.0), jsonlite, survival
 LinkingTo: Rcpp
 Encoding: UTF-8
-RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 URL: https://github.com/JulesBa-Git/treehunt
 BugReports: https://github.com/JulesBa-Git/treehunt/issues
 Suggests: testthat (>= 3.0.0), umap, dbscan, ggplot2
 Config/testthat/edition: 3
 SystemRequirements: C++17
+Config/roxygen2/version: 8.1.0

@@ -20,7 +20,11 @@
 #'   a candidate to receive non-zero search fitness.
 #' @param min_covered_events Minimum number of exposed endpoint events for a
 #'   candidate to receive non-zero search fitness.
-#' @return An object of class `pwp_rao_context`.
+#' @return A list of class `pwp_rao_context` containing the reduced `coxph`
+#'   `fit`, the numeric arrays in `score_data` used by the score engine,
+#'   `row_index` (one-based indices of retained analysis rows), and
+#'   `specification` (model settings and analysis counts). The print method
+#'   displays a summary and returns the same object invisibly.
 #' @export
 fit_pwp_rao_context <- function(
     data,
@@ -260,6 +264,22 @@ print.pwp_rao_context <- function(x, ...) {
 #' @param diversity Whether to apply the engine's diversity rule.
 #' @param seed Integer seed for the C++ random-number generator.
 #' @param verbose Whether to print progress.
+#' @return A named list containing:
+#'   * `final_population`: a list of integer vectors, each describing a final
+#'     combination with zero-based tree indices.
+#'   * `final_scores`: a numeric vector of search fitness values in the same
+#'     order. Eligible combinations use the signed Rao statistic, truncated at
+#'     zero when `context` specifies `positive_only = TRUE`; combinations that
+#'     fail the coverage or information requirements receive zero fitness.
+#'   * `parameters`: a list containing `population_size`, `epochs`, and
+#'     `score_type` (`"pwp_rao"`).
+#'   * `statistics`: a list containing `total_generations` and `cache_hits`.
+#'   * `pwp_context_statistics`: a list containing `event_time_groups` (the
+#'     number of distinct event-time groups within strata) and
+#'     `nuisance_covariates` (the number of adjustment covariates).
+#'
+#'   Use [score_pwp_combinations()] for detailed statistics and
+#'   [decode_treehunt_solutions()] to convert node indices to labels.
 #' @export
 run_pwp_genetic_algorithm <- function(
     data,
@@ -373,6 +393,28 @@ run_pwp_mcmc <- function(
 #' @inheritParams run_pwp_genetic_algorithm
 #' @param combinations List of node-index vectors.
 #' @param index_base Either 0 or 1.
+#' @return A data frame with one row per combination, in input order, containing:
+#'   * `eligible`: logical indicator that coverage thresholds are met and the
+#'     efficient information is finite and greater than the numerical tolerance.
+#'   * `fitness`: numeric search score, equal to `signed_z` or
+#'     `max(0, signed_z)` according to `context`; zero for ineligible combinations.
+#'   * `signed_z`: signed Rao statistic, positive for an increased event hazard.
+#'   * `rao_chisq`: squared signed statistic, with one degree of freedom under
+#'     the null model.
+#'   * `p_value_model_based`: the corresponding chi-squared upper-tail
+#'     probability, using model-based information.
+#'   * `score_u`: score for the combination indicator at the reduced-model fit.
+#'   * `efficient_information`: information for that score after adjustment
+#'     for the nuisance covariates.
+#'   * `covered_intervals`, `covered_patients`, `covered_events`: integer counts
+#'     of covered intervals, distinct patients, and endpoint events.
+#'   * `combination`: a list-column retaining the supplied node vectors and
+#'     their original index base.
+#'
+#'   Statistics are numeric. If there are no covered intervals or the efficient
+#'   information is unusable, `signed_z`, `rao_chisq`, and `fitness` are zero and
+#'   `p_value_model_based` is one. If only a coverage threshold fails, the full
+#'   statistics are retained while `fitness` is zero.
 #' @export
 score_pwp_combinations <- function(
     combinations,
@@ -409,6 +451,10 @@ score_pwp_combinations <- function(
 #' @param tree Tree data frame.
 #' @param index_base Index base of `combinations`.
 #' @param code_column Column containing node labels.
+#' @return A list of character vectors, one per input combination in the same
+#'   order. Each vector contains the labels from `tree[[code_column]]` for the
+#'   supplied node indices, in their original order. The input index base is
+#'   handled by `index_base`.
 #' @export
 decode_treehunt_solutions <- function(combinations, tree, index_base = 0L,
                                       code_column = "Code") {
@@ -433,6 +479,24 @@ decode_treehunt_solutions <- function(combinations, tree, index_base = 0L,
 #'
 #' @inheritParams score_pwp_combinations
 #' @param keep_fits Retain fitted `coxph` objects in a list-column.
+#' @return For a non-empty list of combinations, a data frame with one row
+#'   per combination in input order, containing numeric columns:
+#'   * `estimate`: fitted log hazard ratio for the combination indicator.
+#'   * `robust_se`: patient-clustered standard error of `estimate`.
+#'   * `hazard_ratio`: `exp(estimate)`, conditional on the model covariates and
+#'     event-order strata.
+#'   * `conf_low`, `conf_high`: lower and upper limits of the 95% Wald
+#'     confidence interval for the hazard ratio, using `robust_se`.
+#'   * `robust_z`, `robust_p_value`: Wald statistic and two-sided normal
+#'     p-value for a zero log hazard ratio.
+#'   * `exposed_intervals`, `exposed_events`: counts of covered intervals and
+#'     endpoint events among the analysis rows.
+#'
+#'   The `combination` list-column retains the input node vectors and index base.
+#'   When `keep_fits = TRUE`, a `fit` list-column also contains the corresponding
+#'   fitted `coxph` objects. With no combinations, the existing interface returns
+#'   a list with an empty `combination` component (and an empty `fit` component
+#'   if requested).
 #' @export
 refit_pwp_combinations <- function(
     combinations,

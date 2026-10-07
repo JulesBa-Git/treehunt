@@ -19,5 +19,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Jules Bangard \email{jules.bangard@etu.unistra.fr}
 
+Authors:
+\itemize{
+  \item Jules Bangard \email{jules.bangard@etu.unistra.fr}
+}
+
 }
 \keyword{internal}

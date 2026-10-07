@@ -20,6 +20,12 @@ decode_treehunt_solutions(
 
 \item{code_column}{Column containing node labels.}
 }
+\value{
+A list of character vectors, one per input combination in the same
+order. Each vector contains the labels from \code{tree[[code_column]]} for the
+supplied node indices, in their original order. The input index base is
+handled by \code{index_base}.
+}
 \description{
 Decode treehunt node indexes
 }

@@ -346,33 +346,26 @@ Rcpp::List run_mcmc(
 //' to other solutions in the population, encouraging exploration of diverse regions.
 //'
 //' @examples
-//' \dontrun{
-//' # Create example data
-//' patient_df <- data.frame(
-//'   patient_id = 1:100,
-//'   outcome = rbinom(100, 1, 0.3)
-//' )
-//' patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+//' # A root and three leaf nodes; observations use zero-based leaf indices.
+//' patient_df <- data.frame(outcome = c(1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L))
+//' patient_df$drugs <- list(1L, 2L, c(1L, 3L), 3L,
+//'                          c(1L, 2L), c(2L, 3L), 1L, 2L)
+//' tree_depth <- c(1L, 2L, 2L, 2L)
 //'
-//' # Define tree structure
-//' tree_depth <- c(1, rep(2, 5), rep(3, 15))
-//'
-//' # Run GA
 //' results <- run_genetic_algorithm(
 //'   patient_data = patient_df,
 //'   node_column = "drugs",
 //'   target_column = "outcome",
 //'   tree_depth = tree_depth,
-//'   population_size = 50,
-//'   epochs = 500,
+//'   # Initial combinations use one-based tree indices.
+//'   seed_population = list(2L, 3L, 4L, c(2L, 3L), c(2L, 4L), c(3L, 4L)),
+//'   population_size = 6,
+//'   epochs = 10,
 //'   score_type = "hypergeometric",
-//'   verbose = TRUE
+//'   seed = 123
 //' )
-//'
-//' # View top results
-//' print(results$top_scores)
-//' print(results$top_solutions)
-//' }
+//' head(results$final_scores)
+//' head(results$final_population)
 //'
 //' @export
 //' @seealso \code{\link{run_mcmc}} for an MCMC-based optimization approach
@@ -739,12 +732,13 @@ Rcpp::List run_mcmc_df_tree(
 //' \code{upper_bound_column} and \code{name_column} to define the tree.
 //'
 //' @examples
-//' \dontrun{
-//' # Define tree structure via data frame
+//' # A root and three leaf nodes; observations use zero-based leaf indices.
+//' patient_df <- data.frame(outcome = c(1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L))
+//' patient_df$drugs <- list(1L, 2L, c(1L, 3L), 3L,
+//'                          c(1L, 2L), c(2L, 3L), 1L, 2L)
 //' tree_df <- data.frame(
-//'   node_id = 1:21,
-//'   depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
-//'   # and name column
+//'   node_id = 0:3,
+//'   depth_level = c(1L, 2L, 2L, 2L)
 //' )
 //'
 //' results <- run_genetic_algorithm_df_tree(
@@ -752,11 +746,16 @@ Rcpp::List run_mcmc_df_tree(
 //'   node_column = "drugs",
 //'   target_column = "outcome",
 //'   tree = tree_df,
-//'   depth_column = "depth_level", # or 2
-//'   population_size = 100,
-//'   score_type = "hypergeometric"
+//'   depth_column = "depth_level",
+//'   # Initial combinations use one-based tree indices.
+//'   seed_population = list(2L, 3L, 4L, c(2L, 3L), c(2L, 4L), c(3L, 4L)),
+//'   population_size = 6,
+//'   epochs = 10,
+//'   score_type = "hypergeometric",
+//'   seed = 123
 //' )
-//' }
+//' head(results$final_scores)
+//' head(results$final_population)
 //'
 //' @export
 // [[Rcpp::export]]

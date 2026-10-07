@@ -46,6 +46,14 @@ otherwise exactly one list-column must be present.}
 
 \item{min_pts_dbscan}{Minimum points to form a cluster in DBSCAN. Default is 5.}
 }
+\value{
+A data frame with one row per input combination, in the same order.
+\code{UMAP1} and \code{UMAP2} are numeric coordinates of the two-dimensional UMAP
+embedding of the combination dissimilarities. \code{cluster} is the integer
+DBSCAN assignment: positive values identify clusters and zero marks noise.
+If \code{cocktails} is a data frame, its original columns are retained; otherwise
+a \code{cocktails} list-column contains the supplied one-based node vectors.
+}
 \description{
 Projects cocktail dissimilarities into 2D space using UMAP and identifies
 clusters using DBSCAN.

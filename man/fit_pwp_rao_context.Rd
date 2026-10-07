@@ -50,7 +50,11 @@ candidate to receive non-zero search fitness.}
 \item{...}{Additional print arguments (currently ignored).}
 }
 \value{
-An object of class \code{pwp_rao_context}.
+A list of class \code{pwp_rao_context} containing the reduced \code{coxph}
+\code{fit}, the numeric arrays in \code{score_data} used by the score engine,
+\code{row_index} (one-based indices of retained analysis rows), and
+\code{specification} (model settings and analysis counts). The print method
+displays a summary and returns the same object invisibly.
 }
 \description{
 The reduced Cox model is fitted once. Its linear predictor, nuisance design

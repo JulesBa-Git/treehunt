@@ -10,5 +10,5 @@
 ^tmp\.R$
 ^\.github$
 ^cran-comments\.md$
-^TREEHUNT_CRAN_CHANGELOG_20260923\.md$
+^TREEHUNT_CRAN_CHANGELOG_[0-9]{8}\.md$
 ^LICENSE$

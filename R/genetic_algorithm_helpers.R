@@ -5,17 +5,33 @@
 #' @param tree_df The data frame defining the tree structure.
 #' @param seed_population Optional initial combinations, using one-based tree indices.
 #' @param replicates Number of times to run each configuration. Default is 5.
-#' @param output_dir Directory where result JSONs will be saved.
+#' @param output_dir Required output directory, supplied explicitly by the
+#'   caller. It is created if it does not exist. One JSON file is written
+#'   per configuration; an existing file with the same name is overwritten.
 #' 
+#' @return No return value (`NULL`, invisibly). Called for its side effects:
+#'   runs the requested GA replicates and writes one `results_<name>.json` file
+#'   per configuration to `output_dir`. Each file contains a list of replicate
+#'   results with `final_population` (zero-based node-index vectors),
+#'   `final_scores`, `parameters`, `statistics`, and `metadata` (replicate number,
+#'   configuration name, and timestamp). Files can be read with
+#'   [aggregate_ga_results()].
 #' @export
 run_ga_batch <- function(config_path, 
                          patient_data, 
                          tree_df, 
                          seed_population = NULL,
                          replicates = 5, 
-                         output_dir = "results") {
-  
-  if (!dir.exists(output_dir)) dir.create(output_dir)
+                         output_dir) {
+  if (missing(output_dir) || !is.character(output_dir) ||
+      length(output_dir) != 1L || is.na(output_dir) ||
+      !nzchar(trimws(output_dir))) {
+    stop("Supply 'output_dir' explicitly as a non-empty directory path.",
+         call. = FALSE)
+  }
+  if (!dir.exists(output_dir) && !dir.create(output_dir)) {
+    stop("Could not create output directory: ", output_dir, call. = FALSE)
+  }
   
   # Load configurations
   configs <- jsonlite::fromJSON(config_path)
@@ -153,6 +169,16 @@ map_cocktail_names <- function(aggregated_df, new_tree) {
 #' @param id_column Optional observation-unit identifier required by patient-level
 #'   continuous-outcome scores.
 #' @param name_column Optional node-label column in `tree_df`.
+#' @return A data frame preserving the rows and columns of `df`, with
+#'   `taker_count` (support reported by [compute_score()]) and `scores` (the
+#'   recomputed search score). For continuous-outcome scores, `QT_mean`,
+#'   `QT_median`, `QT_min`, and `QT_max` summarize each combination's
+#'   `QT_diff_distribution` returned by [compute_score()]. These are summaries
+#'   of outcomes among covered observations, not contrasts with the unexposed
+#'   group. For the Wilcoxon score, this distribution contains one median per
+#'   covered patient; for the other continuous scores it contains covered
+#'   observation-level outcomes. An empty or entirely missing distribution is
+#'   summarized as zero. Existing columns with these names are replaced.
 #' @export
 process_ga_scores <- function(df, 
                               patient_data, 
@@ -213,6 +239,16 @@ process_ga_scores <- function(df,
 #' @param tree_df The tree structure data frame.
 #' @param min_score Minimum score threshold to keep a cocktail. Default 0.
 #' @param ... Arguments passed down to process_ga_scores (and then to compute_score).
+#' @return A data frame with one row per distinct combination whose saved
+#'   `score` is strictly greater than `min_score`. Columns include `cocktail`
+#'   (comma-separated zero-based node indices), `cocktail_names`,
+#'   `cocktail_codes`, `score` (the first saved score for that combination),
+#'   `occurrence_count` (appearances across saved populations), and
+#'   `found_in_configs` (configuration names separated by semicolons).
+#'   For retained combinations, [process_ga_scores()] adds the recomputed
+#'   `scores`, `taker_count`, and continuous-outcome summaries described there.
+#'   If no combination passes the threshold, a warning is issued and the
+#'   zero-row data frame is returned without these additional score columns.
 #' @export
 summarize_ga_pipeline <- function(folder_path, 
                                   patient_data, 

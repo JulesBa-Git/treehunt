@@ -106,12 +106,13 @@ the \code{tree_depth} data frame. It uses \code{depth_column} and optionally
 \code{upper_bound_column} and \code{name_column} to define the tree.
 }
 \examples{
-\dontrun{
-# Define tree structure via data frame
+# A root and three leaf nodes; observations use zero-based leaf indices.
+patient_df <- data.frame(outcome = c(1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L))
+patient_df$drugs <- list(1L, 2L, c(1L, 3L), 3L,
+                         c(1L, 2L), c(2L, 3L), 1L, 2L)
 tree_df <- data.frame(
-  node_id = 1:21,
-  depth_level = c(1, rep(2, 5), rep(3, 15)), # User may add, upper bound 
-  # and name column
+  node_id = 0:3,
+  depth_level = c(1L, 2L, 2L, 2L)
 )
 
 results <- run_genetic_algorithm_df_tree(
@@ -119,10 +120,15 @@ results <- run_genetic_algorithm_df_tree(
   node_column = "drugs",
   target_column = "outcome",
   tree = tree_df,
-  depth_column = "depth_level", # or 2
-  population_size = 100,
-  score_type = "hypergeometric"
+  depth_column = "depth_level",
+  # Initial combinations use one-based tree indices.
+  seed_population = list(2L, 3L, 4L, c(2L, 3L), c(2L, 4L), c(3L, 4L)),
+  population_size = 6,
+  epochs = 10,
+  score_type = "hypergeometric",
+  seed = 123
 )
-}
+head(results$final_scores)
+head(results$final_population)
 
 }

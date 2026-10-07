@@ -53,3 +53,62 @@ test_that("saved GA results aggregate without attached tidyverse packages", {
   expect_equal(filter_out_cocktails(c("1,3", "2"), c(1, 2, 3), 2, one_index = TRUE)$cocktail,
                c("1,3", "2"))
 })
+
+test_that("GA batches require an explicit directory without writing by default", {
+  work <- tempfile("treehunt-batch-work-")
+  dir.create(work)
+  old_wd <- setwd(work)
+  on.exit({
+    setwd(old_wd)
+    unlink(work, recursive = TRUE)
+  })
+
+  expect_error(run_ga_batch("missing.json", NULL, NULL),
+               "Supply 'output_dir' explicitly")
+  for (path in list(NULL, character(), "", "  ", NA_character_, c("a", "b"), 1)) {
+    expect_error(run_ga_batch("missing.json", NULL, NULL, output_dir = path),
+                 "Supply 'output_dir' explicitly")
+  }
+  expect_length(list.files(work, all.files = TRUE, no.. = TRUE), 0L)
+})
+
+test_that("GA batches write readable replicates to the requested directory", {
+  work <- tempfile("treehunt-batch-")
+  dir.create(work)
+  on.exit(unlink(work, recursive = TRUE))
+  config_path <- file.path(work, "config.json")
+  output_dir <- file.path(work, "explicit-output")
+  config <- data.frame(
+    name = "toy", node_column = "nodes", target_column = "outcome",
+    depth_column = "Depth", population_size = 4L, epochs = 2L,
+    mutation_rate = 0.1, prob_mutation_type1 = 0.2, crossover_rate = 0.8,
+    elite_count = 0L, tournament_size = 2L, alpha = 1,
+    score_type = "hypergeometric", diversity = FALSE, verbose = FALSE
+  )
+  jsonlite::write_json(config, config_path)
+  observations <- data.frame(outcome = c(1L, 0L, 1L, 0L))
+  observations$nodes <- list(1L, 2L, c(1L, 2L), 2L)
+  tree <- data.frame(Depth = c(1L, 2L, 2L))
+
+  result <- withVisible(suppressMessages(run_ga_batch(
+    config_path, observations, tree,
+    seed_population = list(2L, 3L, c(2L, 3L), 2L),
+    replicates = 2L, output_dir = output_dir
+  )))
+  expect_null(result$value)
+  expect_false(result$visible)
+  expect_equal(list.files(output_dir), "results_toy.json")
+  saved <- jsonlite::fromJSON(file.path(output_dir, "results_toy.json"),
+                              simplifyVector = FALSE)
+  expect_length(saved, 2L)
+  expect_equal(vapply(saved, function(x) {
+    as.integer(unlist(x$metadata$replicate))
+  }, integer(1)), 1:2)
+  expect_true(all(vapply(saved, function(x) {
+    length(x$final_population) == 4L && length(x$final_scores) == 4L &&
+      identical(unlist(x$metadata$config_name, use.names = FALSE), "toy")
+  }, logical(1))))
+  aggregated <- aggregate_ga_results(output_dir)
+  expect_equal(sum(aggregated$occurrence_count), 8L)
+  expect_true(all(is.finite(aggregated$score)))
+})

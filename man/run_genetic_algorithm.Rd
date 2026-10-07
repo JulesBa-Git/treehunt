@@ -114,33 +114,26 @@ When \code{diversity = TRUE}, solutions are penalized based on their similarity
 to other solutions in the population, encouraging exploration of diverse regions.
 }
 \examples{
-\dontrun{
-# Create example data
-patient_df <- data.frame(
-  patient_id = 1:100,
-  outcome = rbinom(100, 1, 0.3)
-)
-patient_df$drugs <- lapply(1:100, function(i) sample(1:20, sample(1:5, 1)))
+# A root and three leaf nodes; observations use zero-based leaf indices.
+patient_df <- data.frame(outcome = c(1L, 0L, 1L, 0L, 1L, 0L, 1L, 0L))
+patient_df$drugs <- list(1L, 2L, c(1L, 3L), 3L,
+                         c(1L, 2L), c(2L, 3L), 1L, 2L)
+tree_depth <- c(1L, 2L, 2L, 2L)
 
-# Define tree structure
-tree_depth <- c(1, rep(2, 5), rep(3, 15))
-
-# Run GA
 results <- run_genetic_algorithm(
   patient_data = patient_df,
   node_column = "drugs",
   target_column = "outcome",
   tree_depth = tree_depth,
-  population_size = 50,
-  epochs = 500,
+  # Initial combinations use one-based tree indices.
+  seed_population = list(2L, 3L, 4L, c(2L, 3L), c(2L, 4L), c(3L, 4L)),
+  population_size = 6,
+  epochs = 10,
   score_type = "hypergeometric",
-  verbose = TRUE
+  seed = 123
 )
-
-# View top results
-print(results$top_scores)
-print(results$top_solutions)
-}
+head(results$final_scores)
+head(results$final_population)
 
 }
 \seealso{

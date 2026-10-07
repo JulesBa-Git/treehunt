@@ -34,6 +34,12 @@
 #' @param eps_dbscan Distance parameter for DBSCAN. Default is 0.2.
 #' @param min_pts_dbscan Minimum points to form a cluster in DBSCAN. Default is 5.
 #' @inheritParams process_ga_scores
+#' @return A data frame with one row per input combination, in the same order.
+#'   `UMAP1` and `UMAP2` are numeric coordinates of the two-dimensional UMAP
+#'   embedding of the combination dissimilarities. `cluster` is the integer
+#'   DBSCAN assignment: positive values identify clusters and zero marks noise.
+#'   If `cocktails` is a data frame, its original columns are retained; otherwise
+#'   a `cocktails` list-column contains the supplied one-based node vectors.
 #' @export
 clustering_genetic_algorithm <- function(cocktails,
                                          patient_data,

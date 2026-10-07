@@ -31,6 +31,32 @@ score_pwp_combinations(
 
 \item{depth_column, upper_bound_column, name_column}{Tree column names.}
 }
+\value{
+A data frame with one row per combination, in input order, containing:
+\itemize{
+\item \code{eligible}: logical indicator that coverage thresholds are met and the
+efficient information is finite and greater than the numerical tolerance.
+\item \code{fitness}: numeric search score, equal to \code{signed_z} or
+\code{max(0, signed_z)} according to \code{context}; zero for ineligible combinations.
+\item \code{signed_z}: signed Rao statistic, positive for an increased event hazard.
+\item \code{rao_chisq}: squared signed statistic, with one degree of freedom under
+the null model.
+\item \code{p_value_model_based}: the corresponding chi-squared upper-tail
+probability, using model-based information.
+\item \code{score_u}: score for the combination indicator at the reduced-model fit.
+\item \code{efficient_information}: information for that score after adjustment
+for the nuisance covariates.
+\item \code{covered_intervals}, \code{covered_patients}, \code{covered_events}: integer counts
+of covered intervals, distinct patients, and endpoint events.
+\item \code{combination}: a list-column retaining the supplied node vectors and
+their original index base.
+}
+
+Statistics are numeric. If there are no covered intervals or the efficient
+information is unusable, \code{signed_z}, \code{rao_chisq}, and \code{fitness} are zero and
+\code{p_value_model_based} is one. If only a coverage threshold fails, the full
+statistics are retained while \code{fitness} is zero.
+}
 \description{
 Evaluate full Rao statistics for combinations
 }

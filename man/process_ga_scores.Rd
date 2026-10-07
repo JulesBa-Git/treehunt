@@ -42,6 +42,18 @@ continuous-outcome scores.}
 
 \item{name_column}{Optional node-label column in \code{tree_df}.}
 }
+\value{
+A data frame preserving the rows and columns of \code{df}, with
+\code{taker_count} (support reported by \code{\link[=compute_score]{compute_score()}}) and \code{scores} (the
+recomputed search score). For continuous-outcome scores, \code{QT_mean},
+\code{QT_median}, \code{QT_min}, and \code{QT_max} summarize each combination's
+\code{QT_diff_distribution} returned by \code{\link[=compute_score]{compute_score()}}. These are summaries
+of outcomes among covered observations, not contrasts with the unexposed
+group. For the Wilcoxon score, this distribution contains one median per
+covered patient; for the other continuous scores it contains covered
+observation-level outcomes. An empty or entirely missing distribution is
+summarized as zero. Existing columns with these names are replaced.
+}
 \description{
 Process and Attach GA Scores and Statistics (Generic)
 }

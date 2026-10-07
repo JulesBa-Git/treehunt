@@ -63,6 +63,26 @@ therefore tend to produce longer combinations.}
 
 \item{verbose}{Whether to print progress.}
 }
+\value{
+A named list containing:
+\itemize{
+\item \code{final_population}: a list of integer vectors, each describing a final
+combination with zero-based tree indices.
+\item \code{final_scores}: a numeric vector of search fitness values in the same
+order. Eligible combinations use the signed Rao statistic, truncated at
+zero when \code{context} specifies \code{positive_only = TRUE}; combinations that
+fail the coverage or information requirements receive zero fitness.
+\item \code{parameters}: a list containing \code{population_size}, \code{epochs}, and
+\code{score_type} (\code{"pwp_rao"}).
+\item \code{statistics}: a list containing \code{total_generations} and \code{cache_hits}.
+\item \code{pwp_context_statistics}: a list containing \code{event_time_groups} (the
+number of distinct event-time groups within strata) and
+\code{nuisance_covariates} (the number of adjustment covariates).
+}
+
+Use \code{\link[=score_pwp_combinations]{score_pwp_combinations()}} for detailed statistics and
+\code{\link[=decode_treehunt_solutions]{decode_treehunt_solutions()}} to convert node indices to labels.
+}
 \description{
 Run the genetic algorithm with the PWP Rao fitness
 }

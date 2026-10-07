@@ -10,7 +10,7 @@ run_ga_batch(
   tree_df,
   seed_population = NULL,
   replicates = 5,
-  output_dir = "results"
+  output_dir
 )
 }
 \arguments{
@@ -24,7 +24,18 @@ run_ga_batch(
 
 \item{replicates}{Number of times to run each configuration. Default is 5.}
 
-\item{output_dir}{Directory where result JSONs will be saved.}
+\item{output_dir}{Required output directory, supplied explicitly by the
+caller. It is created if it does not exist. One JSON file is written
+per configuration; an existing file with the same name is overwritten.}
+}
+\value{
+No return value (\code{NULL}, invisibly). Called for its side effects:
+runs the requested GA replicates and writes one \verb{results_<name>.json} file
+per configuration to \code{output_dir}. Each file contains a list of replicate
+results with \code{final_population} (zero-based node-index vectors),
+\code{final_scores}, \code{parameters}, \code{statistics}, and \code{metadata} (replicate number,
+configuration name, and timestamp). Files can be read with
+\code{\link[=aggregate_ga_results]{aggregate_ga_results()}}.
 }
 \description{
 Run Multiple Genetic Algorithm Replicates from Configuration

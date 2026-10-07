@@ -34,6 +34,28 @@ refit_pwp_combinations(
 
 \item{keep_fits}{Retain fitted \code{coxph} objects in a list-column.}
 }
+\value{
+For a non-empty list of combinations, a data frame with one row
+per combination in input order, containing numeric columns:
+\itemize{
+\item \code{estimate}: fitted log hazard ratio for the combination indicator.
+\item \code{robust_se}: patient-clustered standard error of \code{estimate}.
+\item \code{hazard_ratio}: \code{exp(estimate)}, conditional on the model covariates and
+event-order strata.
+\item \code{conf_low}, \code{conf_high}: lower and upper limits of the 95\% Wald
+confidence interval for the hazard ratio, using \code{robust_se}.
+\item \code{robust_z}, \code{robust_p_value}: Wald statistic and two-sided normal
+p-value for a zero log hazard ratio.
+\item \code{exposed_intervals}, \code{exposed_events}: counts of covered intervals and
+endpoint events among the analysis rows.
+}
+
+The \code{combination} list-column retains the input node vectors and index base.
+When \code{keep_fits = TRUE}, a \code{fit} list-column also contains the corresponding
+fitted \code{coxph} objects. With no combinations, the existing interface returns
+a list with an empty \code{combination} component (and an empty \code{fit} component
+if requested).
+}
 \description{
 This step is intentionally separate from high-throughput screening. It
 estimates hazard ratios and robust confidence intervals for a small set of

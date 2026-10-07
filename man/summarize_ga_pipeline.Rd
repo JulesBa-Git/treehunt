@@ -17,6 +17,18 @@ summarize_ga_pipeline(folder_path, patient_data, tree_df, min_score = 0, ...)
 
 \item{...}{Arguments passed down to process_ga_scores (and then to compute_score).}
 }
+\value{
+A data frame with one row per distinct combination whose saved
+\code{score} is strictly greater than \code{min_score}. Columns include \code{cocktail}
+(comma-separated zero-based node indices), \code{cocktail_names},
+\code{cocktail_codes}, \code{score} (the first saved score for that combination),
+\code{occurrence_count} (appearances across saved populations), and
+\code{found_in_configs} (configuration names separated by semicolons).
+For retained combinations, \code{\link[=process_ga_scores]{process_ga_scores()}} adds the recomputed
+\code{scores}, \code{taker_count}, and continuous-outcome summaries described there.
+If no combination passes the threshold, a warning is issued and the
+zero-row data frame is returned without these additional score columns.
+}
 \description{
 Complete GA Results Analysis Pipeline (Generic)
 }
